@@ -19,6 +19,7 @@
   }
   .title-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
   h1 { margin:0; font-size:28px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
+  
   .lang-select { position: relative; }
   .lang-select button#langBtn { 
     padding:5px 10px; border-radius:12px; border:none; 
@@ -35,6 +36,7 @@
     color:white; cursor:pointer; font-weight:bold; text-align:left; 
   }
   .lang-dropdown button:hover { background: rgba(255,255,255,0.2); }
+
   .controls { margin-bottom:20px; display:flex; gap:10px; flex-wrap: wrap; align-items:center; justify-content: center; }
   .controls button, .controls select { 
     padding:8px 14px; border:none; border-radius:12px; 
@@ -42,16 +44,40 @@
     font-weight:bold; transition:0.2s; backdrop-filter: blur(5px); 
   }
   .controls select { color: black; background: #fff; font-size: 13px; }
+  
+  /* --- СТИЛИ ДЛЯ ФИОЛЕТОВОЙ КНОПКИ PLAY --- */
+  #randomBtn {
+    background: rgba(138, 43, 226, 0.4); /* Полупрозрачный фиолетовый */
+    border: 1px solid rgba(138, 43, 226, 0.5);
+    color: white;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  #randomBtn:hover {
+    background: rgba(138, 43, 226, 0.6);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+  }
+
+  #randomBtn:active {
+    background: rgba(138, 43, 226, 0.8);
+    transform: scale(0.95);
+  }
+  /* ------------------------------------------ */
+
   .sound-grid {
     display:flex; flex-wrap: nowrap; overflow-x:auto; 
-    gap:20px; padding:10px 20px 40px;
+    gap:20px; padding:10px 20px 20px;
     width:100%; justify-content: center; 
     -webkit-overflow-scrolling: touch;
   }
   @media (max-width: 768px) { .sound-grid { justify-content: flex-start; } }
+
   .sound-track { display:flex; flex-direction: column; align-items:center; flex: 0 0 75px; }
   .volume-steps { display: flex; flex-direction: column-reverse; gap: 4px; width: 35px; height: 150px; margin-bottom: 12px; cursor: pointer; }
   .step { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px; transition: 0.1s; }
+  
   .sound-button { 
     width:75px; height:42px; border:none; border-radius:12px; 
     background: rgba(255,255,255,0.3); color:white; font-weight:bold; 
@@ -60,6 +86,15 @@
   }
   .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.4); }
   .mute-btn { margin-top:6px; border:none; border-radius:10px; background:rgba(255,0,0,0.3); color:white; width:35px; height:28px; font-size:12px; }
+
+  .footer-controls { margin-top: 20px; width: 100%; display: flex; justify-content: center; }
+  #globalMuteBtn { 
+    padding: 12px 30px; border: none; border-radius: 20px; 
+    background: rgba(255, 0, 0, 0.5); color: white; font-weight: bold; 
+    cursor: pointer; backdrop-filter: blur(5px); transition: 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
 </style>
 </head>
@@ -87,8 +122,8 @@
     
     <select id="randomInterval">
       <optgroup id="labelSpeed" label="Switch speed:">
-        <option value="10" id="optFast">10s (Fast)</option>
-        <option value="30" id="optSmooth" selected>30s (Smooth)</option>
+        <option value="10" id="optFast" selected>10s (Fast)</option>
+        <option value="30" id="optSmooth">30s (Smooth)</option> 
         <option value="60" id="optSlow">1m (Slow)</option>
         <option value="300" id="optDeep">5m (Deep)</option>
       </optgroup>
@@ -109,6 +144,10 @@
   </div>
 
   <div class="sound-grid" id="soundGrid"></div>
+
+  <div class="footer-controls">
+    <button id="globalMuteBtn">SFX: OFF</button>
+  </div>
 </div>
 
 <script>
@@ -127,19 +166,19 @@ const uiTL = {
 };
 
 let lang='en', audioElements=[], particles=[], randomActive=false, randomTimeout=null, timerInterval=null, timeLeft=0;
+let isSFXMuted = true; 
 
-// --- ИНТЕРАКТИВНЫЕ ЗВУКИ ---
 const clickSounds = [
-  new Audio(sounds[1].file), // Choko
-  new Audio(sounds[3].file), // Wax
-  new Audio(sounds[4].file)  // Wood
+  new Audio(sounds[1].file), 
+  new Audio(sounds[3].file), 
+  new Audio(sounds[4].file)
 ];
 const brushSound = new Audio(sounds[0].file);
 brushSound.loop = true;
 brushSound.volume = 0;
 let isBrushing = false;
+let brushFadeInterval = null;
 
-// Звезды
 const starCanvas = document.getElementById('stars');
 const starCtx = starCanvas.getContext('2d');
 function resStars() { starCanvas.width = window.innerWidth; starCanvas.height = window.innerHeight; }
@@ -212,45 +251,63 @@ sounds.forEach((s, idx) => {
   audioElements.push(state);
 });
 
-// --- ЛОГИКА ИНТЕРАКТИВА (ЭКРАН) ---
+const globalMuteBtn = document.getElementById('globalMuteBtn');
+globalMuteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isSFXMuted = !isSFXMuted;
+    globalMuteBtn.innerText = isSFXMuted ? "SFX: OFF" : "SFX: ON";
+    globalMuteBtn.style.background = isSFXMuted ? "rgba(255, 0, 0, 0.5)" : "rgba(0, 255, 100, 0.3)";
+    if(isSFXMuted) stopBrushing();
+});
+
 window.addEventListener('pointerdown', (e) => {
-  if (e.target.closest('.controls') || e.target.closest('.sound-track') || e.target.closest('.lang-select')) return;
-  isBrushing = true;
+  if (isSFXMuted) return;
+  if (e.target.closest('.controls') || e.target.closest('.sound-track') || e.target.closest('.lang-select') || e.target.closest('.footer-controls')) return;
   
+  isBrushing = true;
   const rndSound = clickSounds[Math.floor(Math.random() * clickSounds.length)];
   const clone = rndSound.cloneNode();
-  clone.volume = 0.4;
-  clone.play();
+  clone.volume = 0.3;
+  clone.play().catch(()=>{});
+  
   setTimeout(() => {
     let fOut = setInterval(() => {
       if (clone.volume > 0.05) clone.volume -= 0.05;
       else { clone.pause(); clearInterval(fOut); }
-    }, 20);
-  }, 400);
+    }, 25);
+  }, 300);
 
-  createParticle(e.clientX, e.clientY, 'rgba(255,255,255,0.7)');
+  createParticle(e.clientX, e.clientY, 'rgba(255,255,255,0.6)');
 });
 
 window.addEventListener('pointermove', (e) => {
-  if (!isBrushing) return;
-  if (brushSound.paused) brushSound.play();
-  if (brushSound.volume < 0.5) brushSound.volume += 0.05;
+  if (isSFXMuted || !isBrushing) return;
+  if (brushSound.paused) brushSound.play().catch(()=>{});
+  clearInterval(brushFadeInterval); 
+  if (brushSound.volume < 0.45) brushSound.volume += 0.05;
   createParticle(e.clientX, e.clientY, sounds[0].color);
 });
 
 window.addEventListener('pointerup', stopBrushing);
 window.addEventListener('pointercancel', stopBrushing);
+window.addEventListener('mouseleave', stopBrushing);
 
 function stopBrushing() {
   isBrushing = false;
-  let fOutB = setInterval(() => {
-    if (brushSound.volume > 0.05) brushSound.volume -= 0.05;
-    else { brushSound.pause(); brushSound.volume = 0; clearInterval(fOutB); }
+  clearInterval(brushFadeInterval);
+  brushFadeInterval = setInterval(() => {
+    if (brushSound.volume > 0.02) {
+        brushSound.volume -= 0.04;
+    } else {
+        brushSound.pause();
+        brushSound.volume = 0;
+        clearInterval(brushFadeInterval);
+    }
   }, 30);
 }
 
 function createParticle(x, y, color) {
-  particles.push({ x, y, r: Math.random()*12+4, s: 0.4+Math.random()*0.4, al: 0.8, c: color });
+  particles.push({ x, y, r: Math.random()*10+3, s: 0.5+Math.random()*0.5, al: 0.8, c: color });
 }
 
 function updateRandomBtnText() {
@@ -383,7 +440,7 @@ function fadeIn(el) {
     clearInterval(el.fadeInterval);
     const a = el.audio;
     const targetVol = el.userVolume; 
-    a.muted = false; a.play(); 
+    a.muted = false; a.play().catch(()=>{}); 
     let v = a.volume;
     el.fadeInterval = setInterval(() => { 
         v += 0.01; 
