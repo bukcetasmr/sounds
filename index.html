@@ -156,31 +156,47 @@ sounds.forEach((s, idx) => {
   const audio = new Audio(s.file);
   audio.loop = true;
   audio.volume = 0.5;
-  const btn = track.querySelector('.sound-button');
-  const muteBtn = track.querySelector('.mute-btn');
-  const steps = track.querySelectorAll('.step');
-  const updateStepsUI = (vol) => {
-    steps.forEach((st, i) => { st.style.backgroundColor = (i+1)/6 <= vol + 0.01 ? s.color : "rgba(255,255,255,0.1)"; });
+  
+  // Добавляем свойство для хранения пользовательской громкости
+  const state = {
+    audio: audio,
+    userVolume: 0.5, // По умолчанию 0.5
+    btn: track.querySelector('.sound-button'),
+    muteBtn: track.querySelector('.mute-btn'),
+    color: s.color,
+    fadeInterval: null,
+    updateStepsUI: (vol) => {
+      const steps = track.querySelectorAll('.step');
+      steps.forEach((st, i) => { st.style.backgroundColor = (i+1)/6 <= vol + 0.01 ? s.color : "rgba(255,255,255,0.1)"; });
+    }
   };
-  updateStepsUI(0.5);
+
+  state.updateStepsUI(0.5);
+
+  const steps = track.querySelectorAll('.step');
   steps.forEach(st => {
     st.addEventListener('click', () => {
       const vol = parseFloat(st.dataset.level);
-      audio.volume = vol; audio.muted = false;
-      updateStepsUI(vol);
-      if(audio.paused) { fadeIn(audio); btn.classList.add('active'); }
-      muteBtn.style.background = 'rgba(255,0,0,0.3)';
+      state.userVolume = vol; // Запоминаем выбор пользователя
+      audio.volume = vol; 
+      audio.muted = false;
+      state.updateStepsUI(vol);
+      if(audio.paused) { fadeIn(state); state.btn.classList.add('active'); }
+      state.muteBtn.style.background = 'rgba(255,0,0,0.3)';
     });
   });
-  btn.addEventListener('click', () => {
-    if(audio.paused){ fadeIn(audio); btn.classList.add('active'); }
-    else { fadeOut(audio); btn.classList.remove('active'); }
+
+  state.btn.addEventListener('click', () => {
+    if(audio.paused){ fadeIn(state); state.btn.classList.add('active'); }
+    else { fadeOut(state); state.btn.classList.remove('active'); }
   });
-  muteBtn.addEventListener('click', () => {
+
+  state.muteBtn.addEventListener('click', () => {
     audio.muted = !audio.muted;
-    muteBtn.style.background = audio.muted ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)';
+    state.muteBtn.style.background = audio.muted ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)';
   });
-  audioElements.push({audio, btn, muteBtn, color:s.color, updateStepsUI, fadeInterval: null});
+
+  audioElements.push(state);
 });
 
 function updateRandomBtnText() {
@@ -243,14 +259,14 @@ function allOff() {
     clearTimeout(randomTimeout);
     updateRandomBtnText();
     audioElements.forEach(el => {
-        fadeOut(el.audio);
+        fadeOut(el);
         el.btn.classList.remove('active');
         el.audio.muted = true;
         el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
     });
 }
 
-// Random Logic с плавными переходами
+// Random Logic
 document.getElementById('randomBtn').addEventListener('click', function() {
   randomActive = !randomActive;
   updateRandomBtnText();
@@ -261,26 +277,22 @@ document.getElementById('randomBtn').addEventListener('click', function() {
 function runRandom() {
   if(!randomActive) return;
 
-  // Генерируем новый набор случайных звуков
   let count = Math.floor(Math.random()*2)+1;
   let shuffled = [...audioElements].sort(() => 0.5-Math.random());
   let nextActive = shuffled.slice(0, count);
 
-  // Обрабатываем все элементы
   audioElements.forEach(el => {
     if (nextActive.includes(el)) {
-      // Плавное включение выбранных
       if (el.audio.paused || el.audio.muted) {
         el.audio.muted = false;
-        fadeIn(el.audio);
+        fadeIn(el); // Теперь fadeIn использует el.userVolume
         el.btn.classList.add('active');
         el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
-        el.updateStepsUI(0.5);
+        el.updateStepsUI(el.userVolume);
       }
     } else {
-      // Плавное затухание невыбранных
       if (!el.audio.paused && !el.audio.muted) {
-        fadeOut(el.audio);
+        fadeOut(el);
         el.btn.classList.remove('active');
         el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
       }
@@ -300,7 +312,6 @@ function animate(){
     if(!a.audio.paused && !a.audio.muted && a.audio.volume > 0.05 && Math.random() < 0.25){
       particles.push({ x: Math.random()*visCanvas.width, y: visCanvas.height+10, r: a.audio.volume*20+8, s: 0.1+Math.random()*0.15, al: 0.6+Math.random()*0.3, c: a.color });
     }
-    // Цвет кнопок меняется в зависимости от громкости
     if(!a.audio.paused && !a.audio.muted) {
       let opacity = Math.max(0.3, a.audio.volume * 1.6);
       a.btn.style.backgroundColor = a.color.replace('0.5', opacity.toFixed(2));
@@ -320,16 +331,34 @@ function animate(){
 }
 animate();
 
-// Универсальные функции Fade
-function fadeIn(a) { 
-    const el = audioElements.find(e => e.audio === a); clearInterval(el.fadeInterval);
-    a.muted = false; a.play(); let v = a.volume;
-    el.fadeInterval = setInterval(() => { v += 0.01; if(v >= 0.5) { a.volume=0.5; clearInterval(el.fadeInterval); } else a.volume=v; }, 30);
-}
-function fadeOut(a) { 
-    const el = audioElements.find(e => e.audio === a); clearInterval(el.fadeInterval);
+// Функции Fade теперь работают с userVolume
+function fadeIn(el) { 
+    clearInterval(el.fadeInterval);
+    const a = el.audio;
+    const targetVol = el.userVolume; // Берем сохраненную громкость пользователя
+    a.muted = false; a.play(); 
     let v = a.volume;
-    el.fadeInterval = setInterval(() => { v -= 0.01; if(v <= 0) { a.volume=0; a.pause(); clearInterval(el.fadeInterval); } else a.volume=v; }, 30);
+    el.fadeInterval = setInterval(() => { 
+        v += 0.01; 
+        if(v >= targetVol) { 
+            a.volume = targetVol; 
+            clearInterval(el.fadeInterval); 
+        } else a.volume = v; 
+    }, 30);
+}
+
+function fadeOut(el) { 
+    clearInterval(el.fadeInterval);
+    const a = el.audio;
+    let v = a.volume;
+    el.fadeInterval = setInterval(() => { 
+        v -= 0.01; 
+        if(v <= 0) { 
+            a.volume = 0; 
+            a.pause(); 
+            clearInterval(el.fadeInterval); 
+        } else a.volume = v; 
+    }, 30);
 }
 
 document.getElementById('langBtn').addEventListener('click', (e) => {
