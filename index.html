@@ -10,7 +10,6 @@
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
     font-family: Arial, sans-serif; color: white; overflow: hidden;
     touch-action: manipulation;
-    /* ЗАПРЕТ ВЫДЕЛЕНИЯ ТЕКСТА */
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -22,9 +21,33 @@
     display:flex; flex-direction: column; align-items:center; 
     padding:20px; height: 100vh; box-sizing: border-box; 
   }
-  .title-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:20px; }
   h1 { margin:0; font-size:28px; color:#ffb400; text-shadow:0 0 10px #ffb400; cursor: default; }
   
+  #helpBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 35px; height: 35px; border-radius: 50%;
+    color: white; font-weight: bold; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(5px); transition: 0.3s;
+  }
+  #helpBtn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+
+  #helpModal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 10001;
+    justify-content: center; align-items: center; backdrop-filter: blur(8px);
+    cursor: pointer;
+  }
+  .help-content {
+    background: rgba(20, 20, 35, 0.9); border: 1px solid #ffb400;
+    padding: 25px; border-radius: 20px; max-width: 85%; width: 350px;
+    box-shadow: 0 0 30px rgba(255, 180, 0, 0.2); text-align: center;
+  }
+  .help-line { margin: 12px 0; font-size: 14px; line-height: 1.4; }
+  .help-line b { color: #ffb400; display: block; margin-bottom: 3px; font-size: 16px; }
+
   .lang-select { position: relative; }
   .lang-select button#langBtn { 
     padding:5px 10px; border-radius:12px; border:none; 
@@ -50,7 +73,6 @@
   }
   .controls select { color: black; background: #fff; font-size: 13px; }
   
-  /* ФИОЛЕТОВАЯ КНОПКА PLAY */
   #randomBtn {
     background: rgba(138, 43, 226, 0.4);
     border: 1px solid rgba(138, 43, 226, 0.5);
@@ -60,7 +82,6 @@
     transition: all 0.3s ease;
   }
   #randomBtn:hover { background: rgba(138, 43, 226, 0.6); box-shadow: 0 0 15px rgba(138, 43, 226, 0.6); }
-  #randomBtn:active { background: rgba(138, 43, 226, 0.8); transform: scale(0.95); }
 
   .sound-grid {
     display:flex; flex-wrap: nowrap; overflow-x:auto; 
@@ -100,9 +121,22 @@
 <canvas id="vis"></canvas>
 <div class="overlay"></div>
 
+<div id="helpModal">
+  <div class="help-content">
+    <h2 style="color: #ffb400; margin-top: 0;" id="helpTitle">GUIDE</h2>
+    <div class="help-line"><b id="hPlay">Play/Pause</b> <span id="hPlayD">Random auto-mix at chosen speed.</span></div>
+    <div class="help-line"><b id="hSpeed">Speed</b> <span id="hSpeedD">How often the sounds change in Play mode.</span></div>
+    <div class="help-line"><b id="hMix">Mixer</b> <span id="hMixD">Tap vertical bars to set volume of each sound.</span></div>
+    <div class="help-line"><b id="hTimer">Timer</b> <span id="hTimerD">Sets countdown to turn off all sounds.</span></div>
+    <div class="help-line"><b id="hSfx">SFX</b> <span id="hSfxD">Draw on screen for extra ASMR sounds.</span></div>
+    <p style="font-size: 12px; opacity: 0.5; margin-top: 20px;" id="helpClose">Click anywhere to close</p>
+  </div>
+</div>
+
 <div class="container">
   <div class="title-bar">
     <h1 id="title">BUCKET ASMR</h1>
+    <div id="helpBtn">?</div>
     <div class="lang-select">
       <button id="langBtn">Language</button>
       <div class="lang-dropdown" id="langDropdown">
@@ -115,7 +149,6 @@
 
   <div class="controls">
     <button id="randomBtn">Play</button>
-    
     <select id="randomInterval">
       <optgroup id="labelSpeed" label="Switch speed:">
         <option value="10" id="optFast" selected>10s (Fast)</option>
@@ -124,7 +157,6 @@
         <option value="300" id="optDeep">5m (Deep)</option>
       </optgroup>
     </select>
-
     <select id="autoOffSelect">
       <optgroup id="labelSleep" label="Sleep timer:">
         <option value="900">15 min</option>
@@ -134,7 +166,6 @@
         <option value="7200">2 hours</option>
       </optgroup>
     </select>
-
     <button id="timerBtn">Start timer</button>
     <span id="timerDisplay" style="color:#9b59b6; font-weight:bold; margin-left:10px;">00:00</span>
   </div>
@@ -147,6 +178,12 @@
 </div>
 
 <script>
+const helpTL = {
+  en: { title: "GUIDE", play: "Play/Pause", playD: "Random auto-mix mode.", speed: "Speed", speedD: "How often the sounds change in Play mode.", mix: "Mixer", mixD: "Tap vertical bars to set volume of each sound.", timer: "Timer", timerD: "Sets countdown to turn off all sounds.", sfx: "SFX", sfxD: "Draw on screen for extra ASMR sounds.", close: "Click anywhere to close" },
+  ru: { title: "СПРАВКА", play: "Play/Pause", playD: "Режим случайного авто-микса.", speed: "Скорость", speedD: "Как часто меняются звуки в режиме Play.", mix: "Микшер", mixD: "Нажимай на полоски для настройки громкости.", timer: "Таймер", timerD: "Устанавливает время до выключения звуков.", sfx: "SFX", sfxD: "Рисуй по экрану для ASMR звуков.", close: "Кликни в любом месте, чтобы закрыть" },
+  uk: { title: "ДОВІДКА", play: "Play/Pause", playD: "Режим випадкового авто-міксу.", speed: "Швидкість", speedD: "Як часто змінюються звуки в режимі Play.", mix: "Мікшер", mixD: "Натискай на смужки для налаштування гучності.", timer: "Таймер", timerD: "Встановлює час до вимкнення звуків.", sfx: "SFX", sfxD: "Малюй по екрану для ASMR звуків.", close: "Клікни будь-де, щоб закрити" }
+};
+
 const sounds = [
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
@@ -165,9 +202,7 @@ let lang='en', audioElements=[], particles=[], randomActive=false, randomTimeout
 let isSFXMuted = true; 
 
 const clickSounds = [
-  new Audio(sounds[1].file), 
-  new Audio(sounds[3].file), 
-  new Audio(sounds[4].file)
+  new Audio(sounds[1].file), new Audio(sounds[3].file), new Audio(sounds[4].file)
 ];
 const brushSound = new Audio(sounds[0].file);
 brushSound.loop = true; brushSound.volume = 0;
@@ -242,9 +277,19 @@ globalMuteBtn.addEventListener('click', (e) => {
     if(isSFXMuted) stopBrushing();
 });
 
+document.getElementById('helpBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('helpModal').style.display = 'flex';
+});
+
+window.addEventListener('click', () => {
+  document.getElementById('helpModal').style.display = 'none';
+  document.getElementById('langDropdown').style.display = 'none';
+});
+
 window.addEventListener('pointerdown', (e) => {
   if (isSFXMuted) return;
-  if (e.target.closest('.controls') || e.target.closest('.sound-track') || e.target.closest('.lang-select') || e.target.closest('.footer-controls')) return;
+  if (e.target.closest('.controls') || e.target.closest('.sound-track') || e.target.closest('.lang-select') || e.target.closest('.footer-controls') || e.target.closest('#helpBtn')) return;
   isBrushing = true;
   const rndSound = clickSounds[Math.floor(Math.random() * clickSounds.length)];
   const clone = rndSound.cloneNode();
@@ -288,7 +333,7 @@ function updateRandomBtnText() {
 }
 
 function setLang(l) { 
-    lang = l; const t = uiTL[lang];
+    lang = l; const t = uiTL[lang]; const h = helpTL[lang];
     document.getElementById('title').innerText = t.title;
     document.getElementById('timerBtn').innerText = timerInterval ? t.stop : t.start;
     document.getElementById('labelSpeed').label = t.speed;
@@ -301,6 +346,19 @@ function setLang(l) {
     sleepOptions[0].innerText = `15 ${t.min}`; sleepOptions[1].innerText = `30 ${t.min}`; sleepOptions[2].innerText = `45 ${t.min}`; sleepOptions[3].innerText = `1 ${t.hour}`; sleepOptions[4].innerText = `2 ${t.hours}`;
     audioElements.forEach((a,i)=> a.btn.innerText = sounds[i].name[lang]);
     updateRandomBtnText();
+    
+    document.getElementById('helpTitle').innerText = h.title;
+    document.getElementById('hPlay').innerText = h.play;
+    document.getElementById('hPlayD').innerText = h.playD;
+    document.getElementById('hSpeed').innerText = h.speed;
+    document.getElementById('hSpeedD').innerText = h.speedD;
+    document.getElementById('hMix').innerText = h.mix;
+    document.getElementById('hMixD').innerText = h.mixD;
+    document.getElementById('hTimer').innerText = h.timer;
+    document.getElementById('hTimerD').innerText = h.timerD;
+    document.getElementById('hSfx').innerText = h.sfx;
+    document.getElementById('hSfxD').innerText = h.sfxD;
+    document.getElementById('helpClose').innerText = h.close;
 }
 
 document.getElementById('timerBtn').addEventListener('click', function() {
@@ -412,7 +470,7 @@ document.getElementById('langBtn').addEventListener('click', (e) => {
     const d = document.getElementById('langDropdown');
     d.style.display = d.style.display==='flex'?'none':'flex';
 });
-window.addEventListener('click', () => document.getElementById('langDropdown').style.display='none');
+
 window.addEventListener('resize', () => { resStars(); visCanvas.width=innerWidth; visCanvas.height=innerHeight; });
 
 setLang('en');
