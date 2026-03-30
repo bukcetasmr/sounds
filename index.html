@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR | STATUS EDITION</title>
+<title>BUCKET ASMR | PROGRESS EDITION</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
-    font-family: Arial, sans-serif; color: white; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: white; overflow: hidden;
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
   }
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
@@ -22,88 +23,69 @@
   }
 
   .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
-  h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
+  h1 { margin:0; font-size:24px; color:#ffb400; text-shadow:0 0 10px rgba(255,180,0,0.5); }
   
-  #helpBtn {
-    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
-    width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-  }
-
   #langBtn {
-    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4);
-    padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 12px;
   }
 
-  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
+  .controls { margin-bottom:15px; display:flex; gap:10px; z-index: 10; }
   .controls > button { 
-    padding:8px 14px; border:none; border-radius:12px; 
-    background: rgba(255,255,255,0.2); color:white; cursor:pointer; 
-    font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
+    padding:10px 20px; border:none; border-radius:12px; 
+    background: rgba(255,255,255,0.15); color:white; cursor:pointer; 
+    font-weight:bold; backdrop-filter: blur(10px); font-size: 14px;
+    border: 1px solid rgba(255,255,255,0.1);
   }
-  #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); }
-  #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
+  #randomBtn { background: rgba(138, 43, 226, 0.4); }
 
   .sound-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-    gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 15px; width: 100%; max-width: 500px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
   }
 
   .sound-button { 
-    aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
-    background: rgba(255,255,255,0.1); color:white; font-weight:bold; 
+    aspect-ratio: 1 / 1; border: none; border-radius: 24px; 
+    background: rgba(255,255,255,0.08); color:white; font-weight:bold; 
     cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
-    backdrop-filter: blur(8px); transition: 0.3s; font-size: 11px; text-align: center;
+    backdrop-filter: blur(12px); transition: transform 0.2s, background 0.3s; font-size: 12px; text-align: center;
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
   }
 
-  /* Прогресс загрузки на фоне кнопки */
+  /* Индикация загрузки */
   .load-progress-bg {
     position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-    background: rgba(255, 180, 0, 0.2); z-index: -1; transition: height 0.1s;
+    background: rgba(255, 180, 0, 0.2); z-index: -1; transition: height 0.2s ease-out;
   }
 
   .status-label {
-    font-size: 9px; text-transform: uppercase; margin-top: 5px; opacity: 0.6; letter-spacing: 0.5px;
+    font-size: 9px; margin-top: 6px; opacity: 0.5; font-weight: normal;
   }
 
-  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.2); }
-  .sound-button.broken { border: 2px solid rgba(255, 0, 0, 0.5) !important; opacity: 0.6; }
+  .sound-button.active { box-shadow: 0 0 20px rgba(255,180,0,0.2); border-color: rgba(255,180,0,0.4); }
+  .sound-button.broken { border: 1px solid rgba(255, 50, 50, 0.5); }
+  .sound-button:active { transform: scale(0.95); }
 
   .tile-vis {
-    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-    width: 30px; height: 4px; background: rgba(255,255,255,0.2);
-    border-radius: 2px; overflow: hidden; display: none;
+    position: absolute; bottom: 10px; width: 30px; height: 3px; 
+    background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; display: none;
   }
-  .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
+  .tile-vis-bar { height: 100%; width: 0%; background: #ffb400; }
   .sound-button.active .tile-vis { display: block; }
 
-  .custom-select-container { position: relative; }
-  .select-trigger {
-    padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2);
-    color: white; cursor: pointer; font-weight: bold; font-size: 13px; min-width: 60px; text-align: center;
-  }
-  .custom-dropdown {
-    display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
-    background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; min-width: 100px;
-  }
-  .custom-dropdown.open { display: flex; }
-  .custom-dropdown button { padding: 10px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); }
-
-  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1; }
   
   .modal {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(10px);
   }
   .modal-content {
-    background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
-    padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%;
+    background: #111; border: 1px solid #333;
+    padding: 30px; border-radius: 30px; text-align: center; color: white; max-width: 80%;
   }
   .modal-btn {
-    background:#ffb400; border:none; padding:12px 30px; border-radius:12px; 
-    font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px;
+    background:#ffb400; border:none; padding:15px 40px; border-radius:15px; 
+    font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 20px;
   }
 </style>
 </head>
@@ -115,30 +97,21 @@
 
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
-    <h2 style="color: #ffb400; margin-top: 0;">Smart ASMR Player</h2>
-    <p>Мониторинг загрузки активирован. Вы увидите процесс подготовки каждого звука.</p>
-    <button class="modal-btn" id="closeWelcome">Поехали!</button>
+    <h2 style="color: #ffb400; margin-bottom: 10px;">Smart Loader</h2>
+    <p style="opacity: 0.8; font-size: 14px; line-height: 1.5;">Мы добавили мониторинг трафика. Если Loading 0% сменится на Error — проверьте интернет или VPN.</p>
+    <button class="modal-btn" id="closeWelcome">СТАРТ</button>
   </div>
 </div>
 
 <div class="container">
-  <div class="title-bar" id="mainHeader">
+  <div class="title-bar">
     <h1 id="title">BUCKET ASMR</h1>
-    <div id="helpBtn">?</div>
     <button id="langBtn">EN</button>
   </div>
 
   <div class="controls">
     <button id="randomBtn">Play</button>
-    <button id="repairBtn">REPAIR</button>
-    <div class="custom-select-container">
-        <div class="select-trigger" id="speedTrigger">30s</div>
-        <div class="custom-dropdown" id="speedDropdown">
-            <button onclick="setSpeed(10, '10s')">10s</button>
-            <button onclick="setSpeed(30, '30s')">30s</button>
-            <button onclick="setSpeed(60, '1m')">1m</button>
-        </div>
-    </div>
+    <button id="reloadBtn" onclick="location.reload()">Reload</button>
   </div>
 
   <div id="soundGrid" class="sound-grid"></div>
@@ -146,9 +119,9 @@
 
 <script>
 let audioCtx = null, globalAnalyser = null;
-let currentSpeedValue = 30, langIdx = 0;
+let langIdx = 0;
 const langOrder = ['en', 'uk', 'ru'];
-let audioElements=[], particles=[], randomActive=false;
+let audioElements = [], randomActive = false;
 
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
@@ -159,9 +132,9 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", loading: "Loading", decoding: "Processing", ready: "Ready", error: "Error" },
-  ru: { title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", loading: "Загрузка", decoding: "Обработка", ready: "Готов", error: "Ошибка" },
-  uk: { title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", loading: "Завантаження", decoding: "Обробка", ready: "Готов", error: "Помилка" }
+  en: { play: "Play", pause: "Pause", loading: "Loading", ready: "Ready", error: "Error", processing: "Wait..." },
+  ru: { play: "Играть", pause: "Пауза", loading: "Загрузка", ready: "Готов", error: "Ошибка", processing: "Ждите..." },
+  uk: { play: "Грати", pause: "Пауза", loading: "Завантаження", ready: "Готов", error: "Помилка", processing: "Чекайте..." }
 };
 
 function initAudioContext() {
@@ -175,48 +148,57 @@ function initAudioContext() {
   globalAnalyser.connect(audioCtx.destination);
 }
 
-// ФУНКЦИЯ ЗАГРУЗКИ С МОНИТОРИНГОМ ПРОГРЕССА
-function loadSound(state, fileName) {
-    const xhr = new XMLHttpRequest();
-    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${fileName}?v=${Date.now()}`;
+async function loadSound(state, fileName) {
+  const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${fileName}?v=${Date.now()}`;
+  const t = uiTL[langOrder[langIdx]];
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error();
+
+    const reader = response.body.getReader();
+    const contentLength = +response.headers.get('Content-Length');
     
-    const t = uiTL[langOrder[langIdx]];
-    state.statusLabel.innerText = t.loading + " 0%";
+    let receivedLength = 0;
+    let chunks = []; 
     
-    xhr.open('GET', url, true);
-    xhr.responseType = 'blob';
+    while(true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      if (contentLength) {
+        const percent = Math.round((receivedLength / contentLength) * 100);
+        state.statusLabel.innerText = `${t.loading} ${percent}%`;
+        state.progressBg.style.height = percent + "%";
+      }
+    }
 
-    xhr.onprogress = (e) => {
-        if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            state.statusLabel.innerText = t.loading + ` ${percent}%`;
-            state.progressBg.style.height = percent + "%";
-        }
+    state.statusLabel.innerText = t.processing;
+    const blob = new Blob(chunks);
+    state.audio.src = URL.createObjectURL(blob);
+    
+    state.audio.oncanplaythrough = () => {
+      state.ready = true;
+      state.statusLabel.innerText = t.ready;
+      state.progressBg.style.height = "0%";
+      state.btn.classList.remove('broken');
     };
 
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            state.statusLabel.innerText = t.decoding;
-            const blob = xhr.response;
-            state.audio.src = URL.createObjectURL(blob);
-            state.audio.oncanplaythrough = () => {
-                state.ready = true;
-                state.statusLabel.innerText = t.ready;
-                state.progressBg.style.height = "0%"; // Сбрасываем фон после готовности
-                state.btn.classList.remove('broken');
-            };
-        } else {
-            state.statusLabel.innerText = t.error;
-            state.btn.classList.add('broken');
-        }
+  } catch (err) {
+    // FALLBACK: Если fetch/CORS не сработал, пробуем обычный метод
+    state.audio.src = url;
+    state.audio.load();
+    state.audio.oncanplaythrough = () => {
+      state.ready = true;
+      state.statusLabel.innerText = t.ready;
     };
-
-    xhr.onerror = () => {
-        state.statusLabel.innerText = t.error;
-        state.btn.classList.add('broken');
+    state.audio.onerror = () => {
+      state.statusLabel.innerText = t.error;
+      state.btn.classList.add('broken');
     };
-
-    xhr.send();
+  }
 }
 
 const grid = document.getElementById('soundGrid');
@@ -225,23 +207,22 @@ sounds.forEach((s) => {
   btn.className = 'sound-button';
   btn.innerHTML = `
     <div class="load-progress-bg"></div>
-    <span class="name-span">${s.name[langOrder[langIdx]]}</span>
-    <span class="status-label">Waiting</span>
+    <span class="name-txt">${s.name[langOrder[langIdx]]}</span>
+    <span class="status-label">...</span>
     <div class="tile-vis"><div class="tile-vis-bar"></div></div>
   `;
   grid.appendChild(btn);
 
   const audio = new Audio();
   audio.loop = true; audio.crossOrigin = "anonymous";
-  audio.setAttribute('playsinline', '');
 
   const state = { 
     audio, btn, color: s.color, ready: false,
     visBar: btn.querySelector('.tile-vis-bar'),
     statusLabel: btn.querySelector('.status-label'),
     progressBg: btn.querySelector('.load-progress-bg'),
-    nameSpan: btn.querySelector('.name-span'),
-    source: null, gainNode: null, analyser: null, fileName: s.file, names: s.name
+    nameTxt: btn.querySelector('.name-txt'),
+    source: null, gainNode: null, analyser: null, names: s.name
   };
 
   btn.onclick = () => { 
@@ -251,28 +232,22 @@ sounds.forEach((s) => {
   };
   
   audioElements.push(state);
-  // Начинаем загрузку
   loadSound(state, s.file);
 });
 
-function setupWebAudio(el) {
-  if (!audioCtx || el.source) return;
-  el.source = audioCtx.createMediaElementSource(el.audio);
-  el.gainNode = audioCtx.createGain();
-  el.analyser = audioCtx.createAnalyser();
-  el.analyser.fftSize = 32;
-  el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
-  el.source.connect(el.gainNode);
-  el.gainNode.connect(el.analyser);
-  el.analyser.connect(globalAnalyser);
-  el.gainNode.gain.value = 0;
-}
-
 function fadeIn(el) {
-  setupWebAudio(el);
+  if (!el.source && audioCtx) {
+    el.source = audioCtx.createMediaElementSource(el.audio);
+    el.gainNode = audioCtx.createGain();
+    el.analyser = audioCtx.createAnalyser();
+    el.analyser.fftSize = 32;
+    el.source.connect(el.gainNode);
+    el.gainNode.connect(el.analyser);
+    el.analyser.connect(globalAnalyser);
+  }
   el.audio.play();
   el.btn.classList.add('active');
-  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
+  el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
 }
 
 function fadeOut(el) {
@@ -281,72 +256,68 @@ function fadeOut(el) {
   setTimeout(() => { if(!el.btn.classList.contains('active')) el.audio.pause(); }, 500);
 }
 
-// --- ВИЗУАЛИЗАЦИЯ И ФОН ---
-const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
-const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
-function res() { starCanvas.width = visCanvas.width = innerWidth; starCanvas.height = visCanvas.height = innerHeight; }
-res();
-const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
+// Визуализация звезд
+const sCanvas = document.getElementById('stars'); const sCtx = sCanvas.getContext('2d');
+const vCanvas = document.getElementById('vis'); const vCtx = vCanvas.getContext('2d');
+function res() { sCanvas.width = vCanvas.width = innerWidth; sCanvas.height = vCanvas.height = innerHeight; }
+window.onresize = res; res();
+
+const stars = Array.from({length:60}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.2, a:Math.random() }));
 
 function animate(){
-  starCtx.clearRect(0,0,innerWidth,innerHeight);
-  starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; starCtx.beginPath(); starCtx.arc(s.x,s.y,s.r,0,Math.PI*2); starCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; starCtx.fill(); });
-  visCtx.clearRect(0,0,innerWidth,innerHeight);
-  
+  sCtx.clearRect(0,0,innerWidth,innerHeight);
+  stars.forEach(s => {
+    s.a += 0.005;
+    sCtx.beginPath(); sCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    sCtx.fillStyle = `rgba(255,255,255,${(Math.sin(s.a)+1)/2})`; sCtx.fill();
+  });
+
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
-        el.analyser.getByteFrequencyData(el.tileDataArray);
-        let vol = el.tileDataArray[0];
-        el.visBar.style.width = `${Math.min(100, (vol/180)*100)}%`;
-        el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-    } else {
-        if(el.ready) el.btn.style.backgroundColor = 'rgba(255,255,255,0.1)';
+        const data = new Uint8Array(el.analyser.frequencyBinCount);
+        el.analyser.getByteFrequencyData(data);
+        el.visBar.style.width = (data[0]/255)*100 + "%";
+        el.btn.style.backgroundColor = el.color.replace('0.5', 0.1 + (data[0]/255)*0.5);
     }
   });
   requestAnimationFrame(animate);
 }
 animate();
 
-// --- УПРАВЛЕНИЕ ---
-function setSpeed(v, l) { currentSpeedValue=v; document.getElementById('speedTrigger').innerText=l; closeMenus(); }
-function closeMenus() { document.querySelectorAll('.custom-dropdown').forEach(d=>d.classList.remove('open')); }
-document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); closeMenus(); document.getElementById('speedDropdown').classList.toggle('open'); };
-
-function updateUI() {
+document.getElementById('langBtn').onclick = () => {
+  langIdx = (langIdx + 1) % langOrder.length;
   const t = uiTL[langOrder[langIdx]];
-  document.getElementById('title').innerText = t.title;
   document.getElementById('langBtn').innerText = langOrder[langIdx].toUpperCase();
   document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
-  document.getElementById('repairBtn').innerText = t.repair;
-  
   audioElements.forEach(el => {
-    el.nameSpan.innerText = el.names[langOrder[langIdx]];
+    el.nameTxt.innerText = el.names[langOrder[langIdx]];
     if(el.ready) el.statusLabel.innerText = t.ready;
   });
-}
+};
 
-document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
-document.getElementById('randomBtn').onclick = () => { 
-    initAudioContext(); 
-    randomActive = !randomActive; 
-    if(randomActive) runRandom(); else audioElements.forEach(fadeOut); 
-    updateUI(); 
+document.getElementById('randomBtn').onclick = () => {
+  initAudioContext();
+  randomActive = !randomActive;
+  const t = uiTL[langOrder[langIdx]];
+  document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
+  if(!randomActive) audioElements.forEach(fadeOut);
+  else runRandom();
 };
 
 function runRandom() {
-    if(!randomActive) return;
-    let ready = audioElements.filter(el => el.ready);
-    if(ready.length > 0) {
-        audioElements.forEach(fadeOut);
-        fadeIn(ready[Math.floor(Math.random()*ready.length)]);
-    }
-    setTimeout(() => { if(randomActive) runRandom(); }, currentSpeedValue * 1000);
+  if(!randomActive) return;
+  const ready = audioElements.filter(el => el.ready);
+  if(ready.length) {
+    audioElements.forEach(fadeOut);
+    fadeIn(ready[Math.floor(Math.random()*ready.length)]);
+  }
+  setTimeout(runRandom, 15000);
 }
 
-document.getElementById('repairBtn').onclick = () => { location.reload(); };
-document.getElementById('closeWelcome').onclick = () => document.getElementById('welcomeModal').style.display='none';
-window.onresize = res;
-updateUI();
+document.getElementById('closeWelcome').onclick = () => {
+  initAudioContext();
+  document.getElementById('welcomeModal').style.display='none';
+};
 </script>
 </body>
 </html>
