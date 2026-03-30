@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR | NO TIMER EDITION</title>
+<title>BUCKET ASMR | OGG BEAUTY</title>
 <style>
+  /* --- ВОЗВРАЩАЕМ КРАСИВЫЙ СТИЛЬ --- */
   body, html {
     margin: 0; padding: 0; height: 100%;
+    /* Тот самый градиент */
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
     font-family: Arial, sans-serif; color: white; overflow: hidden;
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
@@ -49,6 +51,7 @@
     gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
   }
 
+  /* Яркие полупрозрачные кнопки */
   .sound-button { 
     aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
     background: rgba(255,255,255,0.15); color:white; font-weight:bold; 
@@ -57,16 +60,7 @@
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
   }
 
-  /* Состояния кнопок */
-  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.3); }
-  .sound-button.broken { border: 2px solid rgba(255, 0, 0, 0.5) !important; opacity: 0.6; }
-  .sound-button.repairing { animation: pulse-repair 1.5s infinite; }
-
-  @keyframes pulse-repair {
-    0% { background: rgba(255,255,255,0.15); }
-    50% { background: rgba(255, 180, 0, 0.2); }
-    100% { background: rgba(255,255,255,0.15); }
-  }
+  .sound-button.loading { color: #ffb400; opacity: 0.7; font-style: italic; }
 
   .tile-vis {
     position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
@@ -74,6 +68,7 @@
     border-radius: 2px; overflow: hidden; display: none;
   }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
+  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.1); }
   .sound-button.active .tile-vis { display: block; }
 
   .custom-select-container { position: relative; }
@@ -115,12 +110,13 @@
 
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
-    <h2 style="color: #ffb400; margin-top: 0;">Smart ASMR Player</h2>
-    <p style="line-height: 1.6; font-size: 16px;">
-      <b>Интеллектуальный режим:</b> кнопка Play пропускает битые звуки, пока система их чинит.<br><br>
-      <i>Чиним на лету, слушаем без пауз. Таймер отключен.</i>
+    <h2 style="color: #ffb400; margin-top: 0;">Welcome to Bucket ASMR!</h2>
+    <p style="line-height: 1.6; font-size: 16px; color: #ccc;">
+      <b>OGG ENGINE ACTIVE.</b><br>
+      Buttons show <i>"Load..."</i> during decoding.<br><br>
+      <i>Sleep Well, Vlad Bucket.</i>
     </p>
-    <button class="modal-btn" id="closeWelcome">Поехали!</button>
+    <button class="modal-btn" id="closeWelcome">Let's go!</button>
   </div>
 </div>
 
@@ -142,93 +138,31 @@
             <button onclick="setSpeed(60, '1m')">1m</button>
         </div>
     </div>
-    </div>
+  </div>
 
   <div id="soundGrid" class="sound-grid"></div>
 </div>
 
 <script>
 let audioCtx = null, globalAnalyser = null;
-let currentSpeedValue = 30, langIdx = 0; // currentSleepValue удален
+let currentSpeedValue = 30, langIdx = 0;
 const langOrder = ['en', 'uk', 'ru'];
-let audioElements=[], particles=[], randomActive=false; // timerInterval удален
+let audioElements=[], particles=[], randomActive=false;
 
+// Файлы .ogg
 const sounds = [
-  {file:'purplebrush.mp3', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
-  {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
-  {file:'strawberry.mp3', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
-  {file:'wax.mp3', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.5)'},
-  {file:'woodandrocks.mp3', name:{en:'Wood', ru:'Дерево', uk:'Дерево'}, color:'rgba(255,255,0,0.5)'}
+  {file:'purplebrush.ogg', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
+  {file:'choko.ogg', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
+  {file:'strawberry.ogg', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
+  {file:'wax.ogg', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.5)'},
+  {file:'woodandrocks.ogg', name:{en:'Wood', ru:'Дерево', uk:'Дерево'}, color:'rgba(255,255,0,0.5)'}
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR" }, // start/stop удалены
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ" },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", loading: "Load..." },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", loading: "Загрузка..." },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", loading: "Завантаження..." }
 };
-
-// --- СИСТЕМА УМНОГО РЕМОНТА + ДИСПЕТЧЕР ---
-
-function isSoundReady(el) {
-    return el.audio.readyState >= 2 && !el.btn.classList.contains('broken') && !el.btn.classList.contains('repairing');
-}
-
-function autoRepair(state, soundFile) {
-    state.btn.classList.add('repairing');
-    state.btn.classList.remove('broken');
-    
-    const alternatives = [
-        `https://raw.githubusercontent.com/bucketasmr/sounds/main/${soundFile}`,
-        `https://raw.githubusercontent.com/bucketasmr/sounds/master/${soundFile}`,
-        `https://raw.githubusercontent.com/bucketasmr/sounds/main/${soundFile.replace('.mp3', '.wav')}`
-    ];
-
-    let currentTry = 0;
-    const tryNext = () => {
-        if (currentTry < alternatives.length) {
-            state.audio.src = alternatives[currentTry];
-            state.audio.load();
-            currentTry++;
-        } else {
-            state.btn.classList.add('broken');
-            state.btn.classList.remove('repairing');
-        }
-    };
-
-    tryNext();
-
-    state.audio.addEventListener('canplaythrough', function success() {
-        state.btn.classList.remove('repairing', 'broken');
-        state.btn.style.boxShadow = "0 0 15px rgba(0, 255, 100, 0.4)";
-        setTimeout(() => state.btn.style.boxShadow = "none", 1000);
-        state.audio.removeEventListener('canplaythrough', success);
-    }, { once: true });
-
-    state.audio.addEventListener('error', () => tryNext(), { once: true });
-}
-
-function runRandom() { 
-  if(!randomActive) return; 
-
-  // Диспетчер: выбираем только те, что сейчас реально работают
-  let readySounds = audioElements.filter(el => isSoundReady(el));
-
-  if (readySounds.length === 0) {
-      console.log("Ждем, пока Watchdog починит хоть что-то...");
-      setTimeout(() => { if(randomActive) runRandom(); }, 3000);
-      return;
-  }
-
-  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); 
-  let shuffled = readySounds.sort(() => 0.5 - Math.random()); 
-  
-  audioElements.forEach(el => fadeOut(el));
-  shuffled.slice(0, count).forEach(el => fadeIn(el));
-
-  setTimeout(() => { if(randomActive) runRandom(); }, currentSpeedValue * 1000); 
-}
-
-// --- ЯДРО АУДИО ---
 
 function initAudioContext() {
   if (audioCtx && audioCtx.state !== 'closed') {
@@ -259,8 +193,9 @@ function setupWebAudio(el) {
 const grid = document.getElementById('soundGrid');
 sounds.forEach((s) => {
   const btn = document.createElement('button');
-  btn.className = 'sound-button';
-  btn.innerHTML = `<span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
+  btn.className = 'sound-button loading';
+  // Изначально пишем "Loading..."
+  btn.innerHTML = `<span>${uiTL[langOrder[langIdx]].loading}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
 
   const audio = new Audio();
@@ -269,18 +204,19 @@ sounds.forEach((s) => {
   audio.preload = "auto";
   audio.setAttribute('playsinline', '');
 
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null };
+  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null, ready: false };
 
-  audio.onerror = () => {
-      btn.style.backgroundColor = "rgba(255, 0, 0, 0.6)";
-      setTimeout(() => {
-          btn.style.backgroundColor = "rgba(255,255,255,0.15)";
-          autoRepair(state, s.file);
-      }, 500);
+  // Когда файл декодирован и готов играть
+  audio.oncanplaythrough = () => {
+      state.ready = true;
+      btn.classList.remove('loading');
+      // Заменяем "Loading" на настоящее имя звука
+      btn.querySelector('span').innerText = s.name[langOrder[langIdx]];
   };
 
   btn.onclick = () => { 
     initAudioContext(); 
+    if(!state.ready) return; // Не даем нажать, пока грузится
     if(state.targetVol === 0) fadeIn(state); else fadeOut(state); 
   };
   audioElements.push(state);
@@ -305,8 +241,21 @@ function fadeOut(el) {
   } else { el.audio.pause(); }
 }
 
-// --- ВИЗУАЛИЗАЦИЯ И ЗВЕЗДЫ ---
+function runRandom() { 
+  if(!randomActive) return; 
+  let readyList = audioElements.filter(el => el.ready);
+  if (readyList.length === 0) {
+      setTimeout(() => { if(randomActive) runRandom(); }, 2000);
+      return;
+  }
+  let count = Math.min(readyList.length, Math.floor(Math.random() * 2) + 1); 
+  let shuffled = readyList.sort(() => 0.5 - Math.random()); 
+  audioElements.forEach(el => fadeOut(el));
+  shuffled.slice(0, count).forEach(el => fadeIn(el));
+  setTimeout(() => { if(randomActive) runRandom(); }, currentSpeedValue * 1000); 
+}
 
+// --- ВИЗУАЛИЗАЦИЯ (ВОЗВРАЩАЕМ ЗВЕЗДЫ И ЧАСТИЦЫ) ---
 const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
 const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
 function res() { starCanvas.width = visCanvas.width = innerWidth; starCanvas.height = visCanvas.height = innerHeight; }
@@ -315,6 +264,7 @@ const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:
 
 function animate(){
   starCtx.clearRect(0,0,innerWidth,innerHeight);
+  // Мерцающие звезды
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; starCtx.beginPath(); starCtx.arc(s.x,s.y,s.r,0,Math.PI*2); starCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; starCtx.fill(); });
   visCtx.clearRect(0,0,innerWidth,innerHeight);
   
@@ -323,17 +273,22 @@ function animate(){
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
+        // Полоска на кнопке
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
+        // Яркость фона кнопки от громкости
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
+        // Создание частиц
         if(Math.random() < (0.05 + vol/255*0.4)){
           particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
         }
     } else { 
-        if(!el.btn.classList.contains('repairing')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        // Сброс стиля если не играет
+        if(!el.btn.classList.contains('loading')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
         el.visBar.style.width = '0%';
     }
   });
 
+  // Отрисовка взлетающих частиц
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.y -= p.s; p.al -= 0.001;
     visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
@@ -347,28 +302,26 @@ animate();
 
 // --- УПРАВЛЕНИЕ ---
 function setSpeed(v, l) { currentSpeedValue=v; document.getElementById('speedTrigger').innerText=l; closeMenus(); }
-// setSleep удален
 function closeMenus() { document.querySelectorAll('.custom-dropdown').forEach(d=>d.classList.remove('open')); }
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); closeMenus(); document.getElementById('speedDropdown').classList.toggle('open'); };
-// обработчик sleepTrigger удален
 
 function updateUI() {
   const t = uiTL[langOrder[langIdx]];
   document.getElementById('title').innerText = t.title;
   document.getElementById('langBtn').innerText = t.code;
   document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
-  // Кнопка timerBtn удалена из UI
   document.getElementById('repairBtn').innerText = t.repair;
-  audioElements.forEach((el, i) => { el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]; });
+  // Обновляем имена только на готовых кнопках
+  audioElements.forEach((el, i) => { 
+    if(el.ready) el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]];
+    else el.btn.querySelector('span').innerText = t.loading;
+  });
 }
 
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); updateUI(); };
-
-// Обработчик timerBtn.onclick полностью удален
-
 document.getElementById('repairBtn').onclick = () => { location.reload(); };
-document.getElementById('helpBtn').onclick = () => alert("Smart Dispatcher: Play only works for loaded sounds. Watchdog repairs broken ones.");
+document.getElementById('helpBtn').onclick = () => alert("Smart Dispatcher: Play only works for loaded sounds. OGG files are seamless.");
 document.getElementById('closeWelcome').onclick = () => document.getElementById('welcomeModal').style.display='none';
 window.onresize = res;
 updateUI();
