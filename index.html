@@ -14,87 +14,30 @@
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
   }
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
-  
-  .container { 
-    position: relative; z-index: 10; 
-    display:flex; flex-direction: column; align-items:center; 
-    padding:20px; height: 100vh; box-sizing: border-box; 
-  }
-
+  .container { position: relative; z-index: 10; display:flex; flex-direction: column; align-items:center; padding:20px; height: 100vh; box-sizing: border-box; }
   .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
   h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
-  
-  #helpBtn {
-    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
-    width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-  }
-
-  #langBtn {
-    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4);
-    padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;
-  }
-
+  #helpBtn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+  #langBtn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; }
   .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
-  .controls > button { 
-    padding:8px 14px; border:none; border-radius:12px; 
-    background: rgba(255,255,255,0.2); color:white; cursor:pointer; 
-    font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
-  }
+  .controls > button { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); font-size: 13px; }
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); }
   #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
-
-  .sound-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-    gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
-  }
-
-  .sound-button { 
-    aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
-    background: rgba(255,255,255,0.15); color:white; font-weight:bold; 
-    cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
-    backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center;
-    border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
-  }
-
-  .tile-vis {
-    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-    width: 30px; height: 4px; background: rgba(255,255,255,0.2);
-    border-radius: 2px; overflow: hidden; display: none;
-  }
+  .sound-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5; }
+  .sound-button { aspect-ratio: 1 / 1; border: none; border-radius: 20px; background: rgba(255,255,255,0.15); color:white; font-weight:bold; cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+  .tile-vis { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 30px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; display: none; }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
   .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.1); }
   .sound-button.active .tile-vis { display: block; }
-
   .custom-select-container { position: relative; }
-  .select-trigger {
-    padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2);
-    color: white; cursor: pointer; font-weight: bold; font-size: 13px; min-width: 80px; text-align: center;
-  }
-  .custom-dropdown {
-    display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
-    background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; min-width: 120px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(15px);
-  }
+  .select-trigger { padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; font-weight: bold; font-size: 13px; min-width: 80px; text-align: center; }
+  .custom-dropdown { display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; min-width: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(15px); }
   .custom-dropdown.open { display: flex; }
   .custom-dropdown button { padding: 10px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); }
-
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
-  
-  .modal {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
-  }
-  .modal-content {
-    background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
-    padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%;
-    box-shadow: 0 0 30px rgba(255, 180, 0, 0.2);
-  }
-  .modal-btn {
-    background:#ffb400; border:none; padding:12px 30px; border-radius:12px; 
-    font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px;
-  }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+  .modal-content { background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400; padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%; box-shadow: 0 0 30px rgba(255, 180, 0, 0.2); }
+  .modal-btn { background:#ffb400; border:none; padding:12px 30px; border-radius:12px; font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -103,20 +46,18 @@
 <canvas id="vis"></canvas>
 <div class="overlay"></div>
 
-<!-- Приветствие -->
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
-    <h2 style="color: #ffb400; margin-top: 0;">Welcome to Bucket ASMR!</h2>
+    <h2 style="color: #ffb400; margin-top: 0;">Welcome!</h2>
     <p style="line-height: 1.6; font-size: 16px;">
       I'm glad to see you here!<br><br>
       <b>Sound issue?</b> Tap <span style="color: #ff5050; font-weight: bold;">REPAIR</span> to fix loading errors, then press Play again.<br><br>
-      <i>Good Night and Sleep Well, Vlad Bucket.</i>
+      <i>Good Night, Vlad Bucket.</i>
     </p>
     <button class="modal-btn" id="closeWelcome">Let's go!</button>
   </div>
 </div>
 
-<!-- Помощь -->
 <div id="helpModal" class="modal">
   <div class="modal-content">
     <h2 id="modalTitle" style="color: #ffb400; margin-top: 0;">GUIDE</h2>
@@ -131,7 +72,6 @@
     <div id="helpBtn">?</div>
     <button id="langBtn">EN</button>
   </div>
-
   <div class="controls">
     <button id="randomBtn">Play</button>
     <button id="repairBtn">REPAIR</button>
@@ -154,16 +94,19 @@
     <button id="timerBtn">Start</button>
     <span id="timerDisplay" style="color:#9b59b6; font-weight:bold;">00:00</span>
   </div>
-
   <div id="soundGrid" class="sound-grid"></div>
 </div>
 
+<!-- Невидимый плеер тишины для обхода блокировки фона -->
+<audio id="silentAudio" loop playsinline>
+    <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3" type="audio/mpeg">
+</audio>
+
 <script>
 let audioCtx = null, globalAnalyser = null;
-let currentSpeedValue = 30, currentSleepValue = 900, langIdx = 0;
+let currentSpeedValue = 10, currentSleepValue = 900, langIdx = 0;
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements=[], particles=[], randomActive=false, timerInterval=null;
-let wakeLock = null;
 
 const sounds = [
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
@@ -179,29 +122,8 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Пуск", stop: "Стоп", repair: "ЛАГОДИТИ" }
 };
 
-// --- ФУНКЦИИ ДЛЯ ФОНОВОЙ РАБОТЫ ---
-function updateMediaSession() {
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaSessionMetadata({
-      title: 'Bucket ASMR Session',
-      artist: 'Vlad Bucket',
-      album: 'Relaxation'
-    });
-    navigator.mediaSession.setActionHandler('play', () => { if(!randomActive) document.getElementById('randomBtn').click(); });
-    navigator.mediaSession.setActionHandler('pause', () => { if(randomActive) document.getElementById('randomBtn').click(); });
-  }
-}
-
-async function requestWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-    }
-  } catch (err) {}
-}
-
-function initAudioContext() {
-  if (audioCtx && audioCtx.state !== 'closed') {
+function initAudio() {
+  if (audioCtx) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return;
   }
@@ -210,24 +132,29 @@ function initAudioContext() {
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
   
-  // Активируем фоновые функции при первом взаимодействии
-  updateMediaSession();
-  requestWakeLock();
+  // Запускаем тишину
+  const silent = document.getElementById('silentAudio');
+  silent.play().catch(() => {});
+
+  // Настройка Media Session
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaSessionMetadata({
+      title: 'Bucket ASMR Background',
+      artist: 'Vlad Bucket',
+      album: 'Sleep ASMR'
+    });
+  }
 }
 
 function setupWebAudio(el) {
   if (!audioCtx || el.source) return;
-  try {
-    el.source = audioCtx.createMediaElementSource(el.audio);
-    el.gainNode = audioCtx.createGain();
-    el.analyser = audioCtx.createAnalyser();
-    el.analyser.fftSize = 32;
-    el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
-    el.source.connect(el.gainNode);
-    el.gainNode.connect(el.analyser);
-    el.analyser.connect(globalAnalyser);
-    el.gainNode.gain.value = 0;
-  } catch (e) { console.error("Web Audio bind error", e); }
+  el.source = audioCtx.createMediaElementSource(el.audio);
+  el.gainNode = audioCtx.createGain();
+  el.analyser = audioCtx.createAnalyser();
+  el.source.connect(el.gainNode);
+  el.gainNode.connect(el.analyser);
+  el.analyser.connect(globalAnalyser);
+  el.gainNode.gain.value = 0;
 }
 
 const grid = document.getElementById('soundGrid');
@@ -239,56 +166,36 @@ sounds.forEach((s) => {
 
   const audio = new Audio();
   audio.src = s.file; audio.loop = true; audio.crossOrigin = "anonymous";
-  audio.preload = "auto";
-  audio.setAttribute('playsinline', ''); audio.setAttribute('webkit-playsinline', '');
+  audio.setAttribute('playsinline', '');
+  audio.setAttribute('webkit-playsinline', '');
 
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null };
-  btn.onclick = () => { 
-    initAudioContext(); 
-    if(state.targetVol === 0) fadeIn(state); else fadeOut(state); 
-  };
+  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null, tileDataArray: new Uint8Array(16) };
+  btn.onclick = () => { initAudio(); if(state.targetVol === 0) fadeIn(state); else fadeOut(state); };
   audioElements.push(state);
 });
 
-document.getElementById('repairBtn').onclick = () => {
-    randomActive = false;
-    audioElements.forEach(el => {
-        el.targetVol = 0;
-        el.audio.pause();
-        el.btn.classList.remove('active');
-        if(el.gainNode && audioCtx) el.gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-    });
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    updateUI();
-    alert("Audio Engine Reset");
-};
-
 function fadeIn(el) {
-  if (!audioCtx) initAudioContext();
+  initAudio();
   el.audio.play().then(() => {
-    if (!el.source) setupWebAudio(el);
+    setupWebAudio(el);
     el.btn.classList.add('active');
     el.targetVol = 0.6;
-    if(el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-  }).catch(e => {
-    el.btn.style.boxShadow = "inset 0 0 15px rgba(255,0,0,0.8)";
-    setTimeout(() => el.btn.style.boxShadow = "none", 500);
-    el.audio.load();
-  });
+    el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
+  }).catch(() => el.audio.load());
 }
 
 function fadeOut(el) {
   el.btn.classList.remove('active');
   el.targetVol = 0;
-  if(el.gainNode && audioCtx) {
-    el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
-    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 500);
-  } else { el.audio.pause(); }
-  
-  const anyActive = audioElements.some(a => a.targetVol > 0);
-  if (!anyActive && 'mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
+  setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 500);
 }
+
+document.getElementById('repairBtn').onclick = () => {
+    randomActive = false;
+    audioElements.forEach(el => { el.targetVol = 0; el.audio.pause(); el.btn.classList.remove('active'); });
+    location.reload();
+};
 
 const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
 const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
@@ -304,21 +211,15 @@ function animate(){
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
-        let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
-        vol /= el.tileDataArray.length;
-        el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
+        let vol = el.tileDataArray[0];
+        el.visBar.style.width = `${(vol/255)*100}%`;
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        if(Math.random() < (0.05 + vol/255*0.4)){
-          particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
-        }
-    } else { 
-        el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
-        el.visBar.style.width = '0%';
-    }
+        if(Math.random() < 0.1) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: (vol/20)+2, s: 1, al: 0.8, c: el.color });
+    } else { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
+    const p = particles[i]; p.y -= p.s; p.al -= 0.005;
     visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
     visCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`;
     visCtx.fill();
@@ -345,7 +246,7 @@ function updateUI() {
 }
 
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
-document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); updateUI(); };
+document.getElementById('randomBtn').onclick = () => { initAudio(); randomActive = !randomActive; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); updateUI(); };
 
 function runRandom() { 
   if(!randomActive) return; 
@@ -356,7 +257,7 @@ function runRandom() {
 }
 
 document.getElementById('timerBtn').onclick = () => {
-  initAudioContext();
+  initAudio();
   if(timerInterval) { clearInterval(timerInterval); timerInterval=null; document.getElementById('timerDisplay').innerText="00:00"; }
   else {
     let left = currentSleepValue;
@@ -371,7 +272,7 @@ document.getElementById('timerBtn').onclick = () => {
 
 document.getElementById('helpBtn').onclick = () => document.getElementById('helpModal').style.display='flex';
 document.getElementById('closeHelp').onclick = () => document.getElementById('helpModal').style.display='none';
-document.getElementById('closeWelcome').onclick = () => document.getElementById('welcomeModal').style.display='none';
+document.getElementById('closeWelcome').onclick = () => { document.getElementById('welcomeModal').style.display='none'; initAudio(); };
 window.onresize = res;
 updateUI();
 </script>
