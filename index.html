@@ -163,6 +163,7 @@ let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 30, currentSleepValue = 900, langIdx = 0;
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements=[], particles=[], randomActive=false, timerInterval=null;
+let wakeLock = null;
 
 const sounds = [
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
@@ -178,6 +179,27 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Пуск", stop: "Стоп", repair: "ЛАГОДИТИ" }
 };
 
+// --- ФУНКЦИИ ДЛЯ ФОНОВОЙ РАБОТЫ ---
+function updateMediaSession() {
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaSessionMetadata({
+      title: 'Bucket ASMR Session',
+      artist: 'Vlad Bucket',
+      album: 'Relaxation'
+    });
+    navigator.mediaSession.setActionHandler('play', () => { if(!randomActive) document.getElementById('randomBtn').click(); });
+    navigator.mediaSession.setActionHandler('pause', () => { if(randomActive) document.getElementById('randomBtn').click(); });
+  }
+}
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (err) {}
+}
+
 function initAudioContext() {
   if (audioCtx && audioCtx.state !== 'closed') {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -187,6 +209,10 @@ function initAudioContext() {
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
+  
+  // Активируем фоновые функции при первом взаимодействии
+  updateMediaSession();
+  requestWakeLock();
 }
 
 function setupWebAudio(el) {
@@ -224,7 +250,6 @@ sounds.forEach((s) => {
   audioElements.push(state);
 });
 
-// УЛУЧШЕННЫЙ REPAIR
 document.getElementById('repairBtn').onclick = () => {
     randomActive = false;
     audioElements.forEach(el => {
@@ -245,6 +270,7 @@ function fadeIn(el) {
     el.btn.classList.add('active');
     el.targetVol = 0.6;
     if(el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
   }).catch(e => {
     el.btn.style.boxShadow = "inset 0 0 15px rgba(255,0,0,0.8)";
     setTimeout(() => el.btn.style.boxShadow = "none", 500);
@@ -259,6 +285,9 @@ function fadeOut(el) {
     el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
     setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 500);
   } else { el.audio.pause(); }
+  
+  const anyActive = audioElements.some(a => a.targetVol > 0);
+  if (!anyActive && 'mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
 }
 
 const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
