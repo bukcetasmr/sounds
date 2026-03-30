@@ -10,6 +10,11 @@
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
     font-family: Arial, sans-serif; color: white; overflow: hidden;
     touch-action: manipulation;
+    /* ЗАПРЕТ ВЫДЕЛЕНИЯ ТЕКСТА */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
   .container { 
@@ -18,7 +23,7 @@
     padding:20px; height: 100vh; box-sizing: border-box; 
   }
   .title-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
-  h1 { margin:0; font-size:28px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
+  h1 { margin:0; font-size:28px; color:#ffb400; text-shadow:0 0 10px #ffb400; cursor: default; }
   
   .lang-select { position: relative; }
   .lang-select button#langBtn { 
@@ -45,26 +50,17 @@
   }
   .controls select { color: black; background: #fff; font-size: 13px; }
   
-  /* --- СТИЛИ ДЛЯ ФИОЛЕТОВОЙ КНОПКИ PLAY --- */
+  /* ФИОЛЕТОВАЯ КНОПКА PLAY */
   #randomBtn {
-    background: rgba(138, 43, 226, 0.4); /* Полупрозрачный фиолетовый */
+    background: rgba(138, 43, 226, 0.4);
     border: 1px solid rgba(138, 43, 226, 0.5);
     color: white;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
     box-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
     transition: all 0.3s ease;
   }
-
-  #randomBtn:hover {
-    background: rgba(138, 43, 226, 0.6);
-    box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
-  }
-
-  #randomBtn:active {
-    background: rgba(138, 43, 226, 0.8);
-    transform: scale(0.95);
-  }
-  /* ------------------------------------------ */
+  #randomBtn:hover { background: rgba(138, 43, 226, 0.6); box-shadow: 0 0 15px rgba(138, 43, 226, 0.6); }
+  #randomBtn:active { background: rgba(138, 43, 226, 0.8); transform: scale(0.95); }
 
   .sound-grid {
     display:flex; flex-wrap: nowrap; overflow-x:auto; 
@@ -111,8 +107,8 @@
       <button id="langBtn">Language</button>
       <div class="lang-dropdown" id="langDropdown">
         <button onclick="setLang('en')">English</button>
-        <button onclick="setLang('ru')">Русский</button>
         <button onclick="setLang('uk')">Українська</button>
+        <button onclick="setLang('ru')">Русский</button>
       </div>
     </div>
   </div>
@@ -153,7 +149,7 @@
 <script>
 const sounds = [
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.5)'},
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name:{en:'Wood', ru:'Дерево', uk:'Дерево'}, color:'rgba(255,255,0,0.5)'}
@@ -174,10 +170,8 @@ const clickSounds = [
   new Audio(sounds[4].file)
 ];
 const brushSound = new Audio(sounds[0].file);
-brushSound.loop = true;
-brushSound.volume = 0;
-let isBrushing = false;
-let brushFadeInterval = null;
+brushSound.loop = true; brushSound.volume = 0;
+let isBrushing = false; let brushFadeInterval = null;
 
 const starCanvas = document.getElementById('stars');
 const starCtx = starCanvas.getContext('2d');
@@ -197,29 +191,20 @@ sounds.forEach((s, idx) => {
   track.className = 'sound-track';
   let stepsHtml = '';
   for(let i=1; i<=6; i++) stepsHtml += `<div class="step" data-level="${i/6}"></div>`;
-  track.innerHTML = `
-    <div class="volume-steps">${stepsHtml}</div>
-    <button class="sound-button">${s.name[lang]}</button>
-    <button class="mute-btn">🔇</button>
-  `;
+  track.innerHTML = `<div class="volume-steps">${stepsHtml}</div><button class="sound-button">${s.name[lang]}</button><button class="mute-btn">🔇</button>`;
   grid.appendChild(track);
   const audio = new Audio(s.file);
-  audio.loop = true;
-  audio.volume = 0.5;
+  audio.loop = true; audio.volume = 0.5;
   
   const state = {
-    audio: audio,
-    userVolume: 0.5, 
-    btn: track.querySelector('.sound-button'),
-    muteBtn: track.querySelector('.mute-btn'),
-    color: s.color,
-    fadeInterval: null,
+    audio: audio, userVolume: 0.5, 
+    btn: track.querySelector('.sound-button'), muteBtn: track.querySelector('.mute-btn'),
+    color: s.color, fadeInterval: null,
     updateStepsUI: (vol) => {
       const steps = track.querySelectorAll('.step');
       steps.forEach((st, i) => { st.style.backgroundColor = (i+1)/6 <= vol + 0.01 ? s.color : "rgba(255,255,255,0.1)"; });
     }
   };
-
   state.updateStepsUI(0.5);
 
   const steps = track.querySelectorAll('.step');
@@ -227,9 +212,7 @@ sounds.forEach((s, idx) => {
     st.addEventListener('click', (e) => {
       e.stopPropagation();
       const vol = parseFloat(st.dataset.level);
-      state.userVolume = vol; 
-      audio.volume = vol; 
-      audio.muted = false;
+      state.userVolume = vol; audio.volume = vol; audio.muted = false;
       state.updateStepsUI(vol);
       if(audio.paused) { fadeIn(state); state.btn.classList.add('active'); }
       state.muteBtn.style.background = 'rgba(255,0,0,0.3)';
@@ -247,7 +230,6 @@ sounds.forEach((s, idx) => {
     audio.muted = !audio.muted;
     state.muteBtn.style.background = audio.muted ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)';
   });
-
   audioElements.push(state);
 });
 
@@ -263,20 +245,16 @@ globalMuteBtn.addEventListener('click', (e) => {
 window.addEventListener('pointerdown', (e) => {
   if (isSFXMuted) return;
   if (e.target.closest('.controls') || e.target.closest('.sound-track') || e.target.closest('.lang-select') || e.target.closest('.footer-controls')) return;
-  
   isBrushing = true;
   const rndSound = clickSounds[Math.floor(Math.random() * clickSounds.length)];
   const clone = rndSound.cloneNode();
-  clone.volume = 0.3;
-  clone.play().catch(()=>{});
-  
+  clone.volume = 0.3; clone.play().catch(()=>{});
   setTimeout(() => {
     let fOut = setInterval(() => {
       if (clone.volume > 0.05) clone.volume -= 0.05;
       else { clone.pause(); clearInterval(fOut); }
     }, 25);
   }, 300);
-
   createParticle(e.clientX, e.clientY, 'rgba(255,255,255,0.6)');
 });
 
@@ -293,16 +271,10 @@ window.addEventListener('pointercancel', stopBrushing);
 window.addEventListener('mouseleave', stopBrushing);
 
 function stopBrushing() {
-  isBrushing = false;
-  clearInterval(brushFadeInterval);
+  isBrushing = false; clearInterval(brushFadeInterval);
   brushFadeInterval = setInterval(() => {
-    if (brushSound.volume > 0.02) {
-        brushSound.volume -= 0.04;
-    } else {
-        brushSound.pause();
-        brushSound.volume = 0;
-        clearInterval(brushFadeInterval);
-    }
+    if (brushSound.volume > 0.02) brushSound.volume -= 0.04;
+    else { brushSound.pause(); brushSound.volume = 0; clearInterval(brushFadeInterval); }
   }, 30);
 }
 
@@ -316,8 +288,7 @@ function updateRandomBtnText() {
 }
 
 function setLang(l) { 
-    lang = l;
-    const t = uiTL[lang];
+    lang = l; const t = uiTL[lang];
     document.getElementById('title').innerText = t.title;
     document.getElementById('timerBtn').innerText = timerInterval ? t.stop : t.start;
     document.getElementById('labelSpeed').label = t.speed;
@@ -327,11 +298,7 @@ function setLang(l) {
     document.getElementById('optDeep').innerText = t.deep;
     document.getElementById('labelSleep').label = t.sleep;
     const sleepOptions = document.querySelectorAll('#autoOffSelect option');
-    sleepOptions[0].innerText = `15 ${t.min}`;
-    sleepOptions[1].innerText = `30 ${t.min}`;
-    sleepOptions[2].innerText = `45 ${t.min}`;
-    sleepOptions[3].innerText = `1 ${t.hour}`;
-    sleepOptions[4].innerText = `2 ${t.hours}`;
+    sleepOptions[0].innerText = `15 ${t.min}`; sleepOptions[1].innerText = `30 ${t.min}`; sleepOptions[2].innerText = `45 ${t.min}`; sleepOptions[3].innerText = `1 ${t.hour}`; sleepOptions[4].innerText = `2 ${t.hours}`;
     audioElements.forEach((a,i)=> a.btn.innerText = sounds[i].name[lang]);
     updateRandomBtnText();
 }
@@ -345,42 +312,33 @@ function startTimer() {
     document.getElementById('timerBtn').innerText = uiTL[lang].stop;
     updateTimerDisplay();
     timerInterval = setInterval(() => {
-        timeLeft--;
-        updateTimerDisplay();
+        timeLeft--; updateTimerDisplay();
         if (timeLeft <= 0) { stopTimer(); allOff(); }
     }, 1000);
 }
 
 function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
+    clearInterval(timerInterval); timerInterval = null;
     document.getElementById('timerDisplay').innerText = "00:00";
     document.getElementById('timerBtn').innerText = uiTL[lang].start;
 }
 
 function updateTimerDisplay() {
-    const m = Math.floor(timeLeft / 60);
-    const s = timeLeft % 60;
+    const m = Math.floor(timeLeft / 60); const s = timeLeft % 60;
     document.getElementById('timerDisplay').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
 function allOff() {
-    randomActive = false;
-    clearTimeout(randomTimeout);
-    updateRandomBtnText();
+    randomActive = false; clearTimeout(randomTimeout); updateRandomBtnText();
     audioElements.forEach(el => {
-        fadeOut(el);
-        el.btn.classList.remove('active');
-        el.audio.muted = true;
-        el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
+        fadeOut(el); el.btn.classList.remove('active');
+        el.audio.muted = true; el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
     });
 }
 
 document.getElementById('randomBtn').addEventListener('click', function() {
-  randomActive = !randomActive;
-  updateRandomBtnText();
-  if(randomActive) runRandom(); 
-  else allOff();
+  randomActive = !randomActive; updateRandomBtnText();
+  if(randomActive) runRandom(); else allOff();
 });
 
 function runRandom() {
@@ -391,16 +349,13 @@ function runRandom() {
   audioElements.forEach(el => {
     if (nextActive.includes(el)) {
       if (el.audio.paused || el.audio.muted) {
-        el.audio.muted = false;
-        fadeIn(el); 
-        el.btn.classList.add('active');
-        el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
+        el.audio.muted = false; fadeIn(el); 
+        el.btn.classList.add('active'); el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
         el.updateStepsUI(el.userVolume);
       }
     } else {
       if (!el.audio.paused && !el.audio.muted) {
-        fadeOut(el);
-        el.btn.classList.remove('active');
+        fadeOut(el); el.btn.classList.remove('active');
         el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
       }
     }
@@ -420,9 +375,7 @@ function animate(){
     if(!a.audio.paused && !a.audio.muted) {
       let opacity = Math.max(0.3, a.audio.volume * 1.6);
       a.btn.style.backgroundColor = a.color.replace('0.5', opacity.toFixed(2));
-    } else {
-      a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)';
-    }
+    } else { a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)'; }
   });
   for(let i = particles.length - 1; i >= 0; i--){
     const p = particles[i]; p.y -= p.s; p.al *= 0.993;
@@ -438,23 +391,19 @@ animate();
 
 function fadeIn(el) { 
     clearInterval(el.fadeInterval);
-    const a = el.audio;
-    const targetVol = el.userVolume; 
+    const a = el.audio; const targetVol = el.userVolume; 
     a.muted = false; a.play().catch(()=>{}); 
     let v = a.volume;
     el.fadeInterval = setInterval(() => { 
-        v += 0.01; 
-        if(v >= targetVol) { a.volume = targetVol; clearInterval(el.fadeInterval); } else a.volume = v; 
+        v += 0.01; if(v >= targetVol) { a.volume = targetVol; clearInterval(el.fadeInterval); } else a.volume = v; 
     }, 30);
 }
 
 function fadeOut(el) { 
     clearInterval(el.fadeInterval);
-    const a = el.audio;
-    let v = a.volume;
+    const a = el.audio; let v = a.volume;
     el.fadeInterval = setInterval(() => { 
-        v -= 0.01; 
-        if(v <= 0) { a.volume = 0; a.pause(); clearInterval(el.fadeInterval); } else a.volume = v; 
+        v -= 0.01; if(v <= 0) { a.volume = 0; a.pause(); clearInterval(el.fadeInterval); } else a.volume = v; 
     }, 30);
 }
 
