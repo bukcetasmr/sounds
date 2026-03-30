@@ -104,19 +104,19 @@
   </div>
 
   <div class="controls">
-    <button id="randomBtn">Press to Random</button>
+    <button id="randomBtn">Random OFF</button>
     <select id="randomInterval">
-      <option value="0">Change often</option>
-      <option value="30">Every 30 sec</option>
+      <option value="30">30 sec</option>
       <option value="60">1 m</option>
       <option value="120">2 m</option>
-      <option value="300"> 5 m</option>
+      <option value="300">5 m</option>
+      <option value="0">Fast</option>
     </select>
 
     <select id="autoOffSelect">
-      <option value="60">Timer: 1 min</option>
-      <option value="300">Timer: 5 min</option>
-      <option value="1200">Timer: 20 min</option>
+      <option value="120">Timer: 2 min</option>
+      <option value="300">Timer: 10 min</option>
+      <option value="1200">Timer: 30 min</option>
       <option value="3600">Timer: 1 hour</option>
       <option value="28800">Timer: 8 hours</option>
     </select>
@@ -158,18 +158,36 @@ sounds.forEach((s,i)=>{
 
   slider.addEventListener('input', e=>{ audio.volume=e.target.value; });
   btn.addEventListener('click', ()=>{
-    if(audio.paused){ fadeIn(audio); btn.classList.add('active'); }
-    else { fadeOut(audio); btn.classList.remove('active'); }
+    if(audio.paused){ fadeIn(audio, 500); btn.classList.add('active'); }
+    else { fadeOut(audio, 500); btn.classList.remove('active'); }
   });
 
-  audioElements.push({audio, btn, slider, color:s.color});
+  // --- добавляем кнопку отключения звука ---
+  const muteBtn = document.createElement('button');
+  muteBtn.textContent = '🔇';
+  muteBtn.className = 'sound-button';
+  muteBtn.style.marginTop = '5px';
+  muteBtn.style.background = 'rgba(255,0,0,0.3)';
+  track.appendChild(muteBtn);
+
+  muteBtn.addEventListener('click', ()=>{
+      if(audio.muted){
+          audio.muted = false;
+          fadeIn(audio, 500);
+          muteBtn.style.background = 'rgba(255,0,0,0.3)';
+          btn.classList.add('active');
+      } else {
+          fadeOut(audio, 500);
+          audio.muted = true;
+          muteBtn.style.background = 'rgba(255,0,0,0.6)';
+          btn.classList.remove('active');
+      }
+  });
+
+  audioElements.push({audio, btn, slider, muteBtn, color:s.color});
 });
 
-window.addEventListener('load', ()=>{
-  if(window.innerWidth <= 768){
-    grid.scrollLeft = 0;
-  }
-});
+window.addEventListener('load', ()=>{ if(window.innerWidth <= 768){ grid.scrollLeft = 0; } });
 
 const canvas=document.getElementById('vis'), ctx=canvas.getContext('2d');
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
@@ -205,25 +223,19 @@ function animate(){
   }
 
   audioElements.forEach(a=>{
-    a.btn.style.backgroundColor = !a.audio.paused ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
+    a.btn.style.backgroundColor = (!a.audio.paused && !a.audio.muted) ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
   });
 
   requestAnimationFrame(animate);
 }
 
 animate();
-window.addEventListener('resize', ()=>{
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
-});
+window.addEventListener('resize', ()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 
-// ------------------ Language ------------------
 const langBtn=document.getElementById('langBtn');
 const langDropdown=document.getElementById('langDropdown');
 
-langBtn.addEventListener('click', ()=>{
-  langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex';
-});
+langBtn.addEventListener('click', ()=>{ langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex'; });
 
 function setLang(l){
   lang=l;
@@ -231,9 +243,7 @@ function setLang(l){
     lang==='en' ? 'BUCKET ASMR' :
     lang==='ru' ? 'ВЕДРО АСМР' : 'ВІДРО АСМР';
 
-  audioElements.forEach((a,i)=>{
-    a.btn.innerText = sounds[i].name[lang];
-  });
+  audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
 
   document.getElementById('randomBtn').innerText = randomActive
     ? (lang==='ru' ? 'Рандом ON' : lang==='uk' ? 'Рандом ON' : 'Random ON')
@@ -246,15 +256,11 @@ function setLang(l){
   langDropdown.style.display='none';
 }
 
-window.addEventListener('click', (e)=>{
-  if(!e.target.closest('.lang-select')){
-    langDropdown.style.display='none';
-  }
-});
+window.addEventListener('click', (e)=>{ if(!e.target.closest('.lang-select')){ langDropdown.style.display='none'; } });
 
-// ------------------ Random ------------------
 let randomActive=false;
 let randomTimer=null;
+
 const randomBtn=document.getElementById('randomBtn');
 const randomInterval=document.getElementById('randomInterval');
 
@@ -268,9 +274,7 @@ randomBtn.addEventListener('click', ()=>{
   if(randomActive){
     triggerRandom();
     scheduleRandom();
-  } else {
-    clearTimeout(randomTimer);
-  }
+  } else { clearTimeout(randomTimer); }
 });
 
 function scheduleRandom(){
@@ -283,104 +287,89 @@ function scheduleRandom(){
   }, intervalSec*1000);
 }
 
-// ------------------ Fade ------------------
-const FADE_STEP = 0.02;
-const FADE_INTERVAL = 50;
-
-function fadeIn(audio, targetVolume=0.5){
-  clearInterval(audio.fadeOutInterval);
-  audio.volume = audio.volume || 0;
-  audio.play();
-  audio.fadeInInterval = setInterval(()=>{
-    if(audio.volume < targetVolume){
-      audio.volume = Math.min(audio.volume + FADE_STEP, targetVolume);
-    } else {
-      clearInterval(audio.fadeInInterval);
-    }
-  }, FADE_INTERVAL);
-}
-
-function fadeOut(audio){
-  clearInterval(audio.fadeInInterval);
-  audio.fadeOutInterval = setInterval(()=>{
-    if(audio.volume > 0){
-      audio.volume = Math.max(audio.volume - FADE_STEP, 0);
-    } else {
-      clearInterval(audio.fadeOutInterval);
-      audio.pause();
-    }
-  }, FADE_INTERVAL);
-}
-
-function triggerRandom(){
+// --- Обновлённый triggerRandom с плавным запуском ---
+function triggerRandom() {
+  const calmIndices = [0, 1, 2, 3]; // Brush, Choko, Strawberry, Wax
   const total = audioElements.length;
-  const activeCount = Math.floor(Math.random()*total)+1;
-  const indices = Array.from({length:total}, (_,i)=>i);
 
-  shuffle(indices);
-  const selected = indices.slice(0, activeCount);
+  const calmCount = Math.floor(Math.random() * 2) + 1;
+  const shuffledCalm = [...calmIndices];
+  shuffle(shuffledCalm);
+  const activeCalm = shuffledCalm.slice(0, calmCount);
 
-  audioElements.forEach((a,i)=>{
-    if(selected.includes(i)){
-      if(a.audio.paused) { fadeIn(a.audio); a.btn.classList.add('active'); }
-    } else {
-      if(!a.audio.paused) { fadeOut(a.audio); a.btn.classList.remove('active'); }
-    }
-  });
-}
-
-function stopAllSounds(){
-  audioElements.forEach(a=>{
-    fadeOut(a.audio);
+  audioElements.forEach((a, i) => {
+    if (!activeCalm.includes(i)) fadeOut(a.audio, 500);
     a.btn.classList.remove('active');
   });
+
+  activeCalm.forEach((i, idx) => {
+    setTimeout(() => fadeIn(audioElements[i].audio, 500), idx * 200);
+    audioElements[i].btn.classList.add('active');
+  });
+
+  const extraCount = Math.floor(Math.random() * (total - calmCount));
+  const indices = Array.from({ length: total }, (_, i) => i).filter(i => !activeCalm.includes(i));
+  shuffle(indices);
+  const extraSelected = indices.slice(0, extraCount);
+
+  extraSelected.forEach((i, idx) => {
+    setTimeout(() => {
+      fadeIn(audioElements[i].audio, 500);
+      audioElements[i].btn.classList.add('active');
+    }, 600 + idx * 200);
+  });
 }
 
-function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
+function fadeIn(audio, duration = 500) {
+  audio.volume = 0;
+  if (audio.paused) audio.play();
+  const step = 50;
+  const increment = step / duration;
+  const interval = setInterval(() => {
+    audio.volume = Math.min(audio.volume + increment, 0.5);
+    if (audio.volume >= 0.5) clearInterval(interval);
+  }, step);
 }
 
-// ------------------ Timer ------------------
-let timerSeconds=0;
-let timerInterval=null;
-let timerRunning=false;
+function fadeOut(audio, duration = 500) {
+  const step = 50;
+  const decrement = step / duration * 0.5;
+  const interval = setInterval(() => {
+    audio.volume = Math.max(audio.volume - decrement, 0);
+    if (audio.volume <= 0) { clearInterval(interval); audio.pause(); }
+  }, step);
+}
 
+function shuffle(array){ for(let i=array.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [array[i], array[j]] = [array[j], array[i]]; } }
+
+// --- Таймер ---
+let timerSeconds=0, timerInterval=null, timerRunning=false;
 const autoOffSelect=document.getElementById('autoOffSelect');
 const timerBtn=document.getElementById('timerBtn');
 const timerDisplay=document.getElementById('timerDisplay');
 
 timerBtn.addEventListener('click', ()=>{
-  if(!timerRunning){
-    timerSeconds=parseInt(autoOffSelect.value);
-    startTimer();
-  } else {
-    stopTimer();
-  }
+  if(!timerRunning){ timerSeconds=parseInt(autoOffSelect.value); startTimer(); } 
+  else { stopTimer(); }
 });
 
 function startTimer(){
   timerRunning=true;
   timerBtn.innerText = lang==='en' ? 'Stop Timer' : 'Стоп таймер';
   updateTimerDisplay();
-
   clearInterval(timerInterval);
   timerInterval=setInterval(()=>{
     timerSeconds--;
     updateTimerDisplay();
-
     if(timerSeconds<=0){
-      stopAllSounds();
+      audioElements.forEach(a=>fadeOut(a.audio, 1000));
       stopTimer();
     }
   },1000);
 }
 
 function stopTimer(){
-  timerRunning=false;
-  timerSeconds=0;
+  timerRunning=false; timerSeconds=0;
   clearInterval(timerInterval);
   timerBtn.innerText = lang==='en' ? 'Start' : 'Старт';
   updateTimerDisplay();
@@ -390,12 +379,8 @@ function updateTimerDisplay(){
   const hours=Math.floor(timerSeconds/3600);
   const minutes=Math.floor((timerSeconds%3600)/60);
   const seconds=timerSeconds%60;
-
-  if(hours>0){
-    timerDisplay.innerText=`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-  } else {
-    timerDisplay.innerText=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-  }
+  timerDisplay.innerText=(hours>0?String(hours).padStart(2,'0')+':':'')+
+                         String(minutes).padStart(2,'0')+':' + String(seconds).padStart(2,'0');
 }
 </script>
 </body>
