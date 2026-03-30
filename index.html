@@ -158,8 +158,8 @@ sounds.forEach((s,i)=>{
 
   slider.addEventListener('input', e=>{ audio.volume=e.target.value; });
   btn.addEventListener('click', ()=>{
-    if(audio.paused){ audio.play(); btn.classList.add('active'); }
-    else { audio.pause(); btn.classList.remove('active'); }
+    if(audio.paused){ fadeIn(audio); btn.classList.add('active'); }
+    else { fadeOut(audio); btn.classList.remove('active'); }
   });
 
   audioElements.push({audio, btn, slider, color:s.color});
@@ -217,6 +217,7 @@ window.addEventListener('resize', ()=>{
   canvas.height=window.innerHeight;
 });
 
+// ------------------ Language ------------------
 const langBtn=document.getElementById('langBtn');
 const langDropdown=document.getElementById('langDropdown');
 
@@ -226,7 +227,6 @@ langBtn.addEventListener('click', ()=>{
 
 function setLang(l){
   lang=l;
-
   document.getElementById('title').innerText =
     lang==='en' ? 'BUCKET ASMR' :
     lang==='ru' ? 'ВЕДРО АСМР' : 'ВІДРО АСМР';
@@ -252,9 +252,9 @@ window.addEventListener('click', (e)=>{
   }
 });
 
+// ------------------ Random ------------------
 let randomActive=false;
 let randomTimer=null;
-
 const randomBtn=document.getElementById('randomBtn');
 const randomInterval=document.getElementById('randomInterval');
 
@@ -274,13 +274,8 @@ randomBtn.addEventListener('click', ()=>{
 });
 
 function scheduleRandom(){
-  if(!randomActive) return;
-
   let intervalSec=parseInt(randomInterval.value);
-
-  if(intervalSec===0){
-    intervalSec=Math.floor(Math.random()*10)+5;
-  }
+  if(intervalSec===0) intervalSec=Math.floor(Math.random()*10)+5;
 
   randomTimer=setTimeout(()=>{
     triggerRandom();
@@ -288,27 +283,56 @@ function scheduleRandom(){
   }, intervalSec*1000);
 }
 
+// ------------------ Fade ------------------
+const FADE_STEP = 0.02;
+const FADE_INTERVAL = 50;
+
+function fadeIn(audio, targetVolume=0.5){
+  clearInterval(audio.fadeOutInterval);
+  audio.volume = audio.volume || 0;
+  audio.play();
+  audio.fadeInInterval = setInterval(()=>{
+    if(audio.volume < targetVolume){
+      audio.volume = Math.min(audio.volume + FADE_STEP, targetVolume);
+    } else {
+      clearInterval(audio.fadeInInterval);
+    }
+  }, FADE_INTERVAL);
+}
+
+function fadeOut(audio){
+  clearInterval(audio.fadeInInterval);
+  audio.fadeOutInterval = setInterval(()=>{
+    if(audio.volume > 0){
+      audio.volume = Math.max(audio.volume - FADE_STEP, 0);
+    } else {
+      clearInterval(audio.fadeOutInterval);
+      audio.pause();
+    }
+  }, FADE_INTERVAL);
+}
+
 function triggerRandom(){
-  const total=audioElements.length;
-  const activeCount=Math.floor(Math.random()*total)+1;
-  const indices=Array.from({length:total}, (_,i)=>i);
+  const total = audioElements.length;
+  const activeCount = Math.floor(Math.random()*total)+1;
+  const indices = Array.from({length:total}, (_,i)=>i);
 
   shuffle(indices);
-
-  const selected=indices.slice(0, activeCount);
+  const selected = indices.slice(0, activeCount);
 
   audioElements.forEach((a,i)=>{
     if(selected.includes(i)){
-      if(a.audio.paused){
-        a.audio.play();
-        a.btn.classList.add('active');
-      }
+      if(a.audio.paused) { fadeIn(a.audio); a.btn.classList.add('active'); }
     } else {
-      if(!a.audio.paused){
-        a.audio.pause();
-        a.btn.classList.remove('active');
-      }
+      if(!a.audio.paused) { fadeOut(a.audio); a.btn.classList.remove('active'); }
     }
+  });
+}
+
+function stopAllSounds(){
+  audioElements.forEach(a=>{
+    fadeOut(a.audio);
+    a.btn.classList.remove('active');
   });
 }
 
@@ -319,6 +343,7 @@ function shuffle(array){
   }
 }
 
+// ------------------ Timer ------------------
 let timerSeconds=0;
 let timerInterval=null;
 let timerRunning=false;
@@ -339,7 +364,6 @@ timerBtn.addEventListener('click', ()=>{
 function startTimer(){
   timerRunning=true;
   timerBtn.innerText = lang==='en' ? 'Stop Timer' : 'Стоп таймер';
-
   updateTimerDisplay();
 
   clearInterval(timerInterval);
@@ -358,14 +382,6 @@ function stopTimer(){
   timerRunning=false;
   timerSeconds=0;
   clearInterval(timerInterval);
-
-  // отключаем рандомизацию
-  if(randomActive){
-    clearTimeout(randomTimer);
-    randomActive=false;
-    randomBtn.innerText = lang==='en' ? 'Random OFF' : 'Рандом OFF';
-  }
-
   timerBtn.innerText = lang==='en' ? 'Start' : 'Старт';
   updateTimerDisplay();
 }
@@ -380,13 +396,6 @@ function updateTimerDisplay(){
   } else {
     timerDisplay.innerText=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
   }
-}
-
-function stopAllSounds(){
-  audioElements.forEach(a=>{
-    a.audio.pause();
-    a.btn.classList.remove('active');
-  });
 }
 </script>
 </body>
