@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ASMR Mixer</title>
+<title>BUCKET ASMR</title>
 <style>
   body, html {
     margin: 0;
@@ -143,7 +143,7 @@
 <body>
 <div class="overlay"></div>
 <div class="container">
-  <h1 id="title">ASMR Mixer</h1>
+  <h1 id="title">BUCKET ASMR</h1>
   <div class="lang-buttons">
     <button onclick="setLang('en')">English</button>
     <button onclick="setLang('ru')">Русский</button>
@@ -171,7 +171,7 @@ const audioElements = [];
 
 function setLang(l){
   lang = l;
-  document.getElementById('title').innerText = lang==='en'?'ASMR Mixer':(lang==='ru'?'АСМР Миксер':'АСМР Міксер');
+  document.getElementById('title').innerText = lang==='en'?'BUCKET ASMR':(lang==='ru'?'ВЕДРО АСМР':'ВIДРО АСМР');
   audioElements.forEach((a,i)=>{
     a.btn.innerText = sounds[i].name[lang];
   });
