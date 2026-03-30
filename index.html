@@ -58,14 +58,8 @@
     }
   }
 
-  .sound-grid::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  .sound-grid::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
-    border-radius: 10px;
-  }
+  .sound-grid::-webkit-scrollbar { height: 8px; }
+  .sound-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
 
   .sound-track {
     display:flex;
@@ -157,12 +151,14 @@ sounds.forEach((s,i)=>{
   const btn=track.querySelector('.sound-button');
 
   slider.addEventListener('input', e=>{ audio.volume=e.target.value; });
+
+  // Play/Pause кнопка
   btn.addEventListener('click', ()=>{
     if(audio.paused){ fadeIn(audio, 500); btn.classList.add('active'); }
     else { fadeOut(audio, 500); btn.classList.remove('active'); }
   });
 
-  // --- добавляем кнопку отключения звука ---
+  // --- Mute кнопка ---
   const muteBtn = document.createElement('button');
   muteBtn.textContent = '🔇';
   muteBtn.className = 'sound-button';
@@ -173,14 +169,10 @@ sounds.forEach((s,i)=>{
   muteBtn.addEventListener('click', ()=>{
       if(audio.muted){
           audio.muted = false;
-          fadeIn(audio, 500);
           muteBtn.style.background = 'rgba(255,0,0,0.3)';
-          btn.classList.add('active');
       } else {
-          fadeOut(audio, 500);
           audio.muted = true;
           muteBtn.style.background = 'rgba(255,0,0,0.6)';
-          btn.classList.remove('active');
       }
   });
 
@@ -234,7 +226,6 @@ window.addEventListener('resize', ()=>{ canvas.width=window.innerWidth; canvas.h
 
 const langBtn=document.getElementById('langBtn');
 const langDropdown=document.getElementById('langDropdown');
-
 langBtn.addEventListener('click', ()=>{ langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex'; });
 
 function setLang(l){
@@ -245,11 +236,13 @@ function setLang(l){
 
   audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
 
-  document.getElementById('randomBtn').innerText = randomActive
+  const randomBtn=document.getElementById('randomBtn');
+  randomBtn.innerText = randomActive
     ? (lang==='ru' ? 'Рандом ON' : lang==='uk' ? 'Рандом ON' : 'Random ON')
     : (lang==='ru' ? 'Рандом OFF' : lang==='uk' ? 'Рандом OFF' : 'Random OFF');
 
-  document.getElementById('timerBtn').innerText = timerRunning
+  const timerBtn=document.getElementById('timerBtn');
+  timerBtn.innerText = timerRunning
     ? (lang==='ru' ? 'Стоп таймер' : lang==='uk' ? 'Стоп таймер' : 'Stop Timer')
     : (lang==='ru' ? 'Старт' : lang==='uk' ? 'Старт' : 'Start');
 
@@ -258,23 +251,18 @@ function setLang(l){
 
 window.addEventListener('click', (e)=>{ if(!e.target.closest('.lang-select')){ langDropdown.style.display='none'; } });
 
-let randomActive=false;
-let randomTimer=null;
-
+let randomActive=false, randomTimer=null;
 const randomBtn=document.getElementById('randomBtn');
 const randomInterval=document.getElementById('randomInterval');
 
 randomBtn.addEventListener('click', ()=>{
   randomActive=!randomActive;
-
   randomBtn.innerText = randomActive
     ? (lang==='en' ? 'Random ON' : 'Рандом ON')
     : (lang==='en' ? 'Random OFF' : 'Рандом OFF');
 
-  if(randomActive){
-    triggerRandom();
-    scheduleRandom();
-  } else { clearTimeout(randomTimer); }
+  if(randomActive){ triggerRandom(); scheduleRandom(); } 
+  else { clearTimeout(randomTimer); }
 });
 
 function scheduleRandom(){
@@ -287,37 +275,24 @@ function scheduleRandom(){
   }, intervalSec*1000);
 }
 
-// --- Обновлённый triggerRandom с плавным запуском ---
 function triggerRandom() {
-  const calmIndices = [0, 1, 2, 3]; // Brush, Choko, Strawberry, Wax
+  const calmIndices = [0, 1, 2, 3];
   const total = audioElements.length;
-
   const calmCount = Math.floor(Math.random() * 2) + 1;
   const shuffledCalm = [...calmIndices];
   shuffle(shuffledCalm);
   const activeCalm = shuffledCalm.slice(0, calmCount);
 
-  audioElements.forEach((a, i) => {
-    if (!activeCalm.includes(i)) fadeOut(a.audio, 500);
-    a.btn.classList.remove('active');
-  });
+  audioElements.forEach((a, i) => { if (!activeCalm.includes(i)) fadeOut(a.audio, 500); a.btn.classList.remove('active'); });
 
-  activeCalm.forEach((i, idx) => {
-    setTimeout(() => fadeIn(audioElements[i].audio, 500), idx * 200);
-    audioElements[i].btn.classList.add('active');
-  });
+  activeCalm.forEach((i, idx) => { setTimeout(() => fadeIn(audioElements[i].audio, 500), idx * 200); audioElements[i].btn.classList.add('active'); });
 
   const extraCount = Math.floor(Math.random() * (total - calmCount));
   const indices = Array.from({ length: total }, (_, i) => i).filter(i => !activeCalm.includes(i));
   shuffle(indices);
   const extraSelected = indices.slice(0, extraCount);
 
-  extraSelected.forEach((i, idx) => {
-    setTimeout(() => {
-      fadeIn(audioElements[i].audio, 500);
-      audioElements[i].btn.classList.add('active');
-    }, 600 + idx * 200);
-  });
+  extraSelected.forEach((i, idx) => { setTimeout(() => { fadeIn(audioElements[i].audio, 500); audioElements[i].btn.classList.add('active'); }, 600 + idx * 200); });
 }
 
 function fadeIn(audio, duration = 500) {
