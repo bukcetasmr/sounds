@@ -42,33 +42,86 @@
     padding: 20px;
   }
 
-  h1 {
+  .title-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 20px;
+  }
+
+  h1 {
+    margin: 0;
     font-size: 28px;
     color: #ffb400;
     text-shadow: 0 0 10px #ffb400;
-    text-align: center;
   }
 
-  .lang-buttons, .random-controls {
+  .lang-select {
+    position: relative;
+  }
+
+  .lang-select button {
+    padding: 5px 10px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    backdrop-filter: blur(5px);
+    transition: 0.2s;
+  }
+
+  .lang-select button:hover {
+    background: rgba(255,255,255,0.4);
+  }
+
+  .lang-dropdown {
+    display: none;
+    position: absolute;
+    top: 35px;
+    left: 0;
+    background: rgba(0,0,0,0.85);
+    border-radius: 12px;
+    overflow: hidden;
+    flex-direction: column;
+    z-index: 9999; /* Слой выше всех кнопок */
+  }
+
+  .lang-dropdown button {
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: left;
+    transition: 0.2s;
+  }
+
+  .lang-dropdown button:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  .random-controls {
     margin-bottom: 20px;
     display: flex;
     gap: 10px;
   }
 
-  .lang-buttons button, .random-controls button, .random-controls select {
+  .random-controls button, .random-controls select {
     padding: 8px 14px;
     border: none;
     border-radius: 12px;
     background: rgba(255,255,255,0.2);
-    color: white;
+    color: black; /* Исправлено для читаемости */
     cursor: pointer;
     font-weight: bold;
     transition: 0.2s;
     backdrop-filter: blur(5px);
   }
 
-  .lang-buttons button:hover, .random-controls button:hover, .random-controls select:hover {
+  .random-controls button:hover, .random-controls select:hover {
     background: rgba(255,255,255,0.4);
   }
 
@@ -152,22 +205,27 @@
 <body>
 <div class="overlay"></div>
 <div class="container">
-  <h1 id="title">BUCKET ASMR</h1>
 
-  <div class="lang-buttons">
-    <button onclick="setLang('en')">English</button>
-    <button onclick="setLang('ru')">Русский</button>
-    <button onclick="setLang('uk')">Українська</button>
+  <div class="title-bar">
+    <h1 id="title">BUCKET ASMR</h1>
+    <div class="lang-select">
+      <button id="langBtn">Language</button>
+      <div class="lang-dropdown" id="langDropdown">
+        <button onclick="setLang('en')">English</button>
+        <button onclick="setLang('ru')">Русский</button>
+        <button onclick="setLang('uk')">Українська</button>
+      </div>
+    </div>
   </div>
 
   <div class="random-controls">
     <button id="randomBtn">Random OFF</button>
     <select id="randomInterval">
-      <option value="0">Произвольно</option>
-      <option value="30">30 секунд</option>
-      <option value="60">1 минута</option>
-      <option value="120">2 минуты</option>
-      <option value="300">5 минут</option>
+      <option value="0">Random</option>
+      <option value="30">30 sec</option>
+      <option value="60">1 m</option>
+      <option value="120">2 m</option>
+      <option value="300">5 m</option>
     </select>
   </div>
 
@@ -177,6 +235,7 @@
 <canvas id="vis"></canvas>
 
 <script>
+// ======= Sounds setup =======
 const sounds = [
   {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name: {en:'Brush', ru:'Кисть', uk:'Пензель'}, color: 'rgba(150,100,255,0.2)'},
   {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name: {en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color: 'rgba(139,69,19,0.2)'},
@@ -190,12 +249,6 @@ let lang = 'en';
 const grid = document.getElementById('soundGrid');
 const audioElements = [];
 const particles = [];
-
-function setLang(l){
-  lang = l;
-  document.getElementById('title').innerText = lang==='en'?'BUCKET ASMR':(lang==='ru'?'ВЕДРО АСМР':'ВIДРО АСМР');
-  audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
-}
 
 // Создаем треки
 sounds.forEach((s,i)=>{
@@ -228,7 +281,7 @@ sounds.forEach((s,i)=>{
   audioElements.push({audio, btn, slider, color: s.color});
 });
 
-// визуализация частиц
+// ======= Canvas particles =======
 const canvas = document.getElementById('vis');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -279,7 +332,23 @@ window.addEventListener('resize', ()=>{
   canvas.height = window.innerHeight;
 });
 
-// Randomizer
+// ======= Language =======
+const langBtn = document.getElementById('langBtn');
+const langDropdown = document.getElementById('langDropdown');
+
+langBtn.addEventListener('click', ()=>{
+  langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex';
+  langDropdown.style.flexDirection = 'column';
+});
+
+function setLang(l){
+  lang = l;
+  document.getElementById('title').innerText = lang==='en'?'BUCKET ASMR':(lang==='ru'?'ВЕДРО АСМР':'ВIДРО АСМР');
+  audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
+  langDropdown.style.display = 'none';
+}
+
+// ======= Randomizer =======
 let randomActive = false;
 let randomTimer = null;
 
@@ -289,13 +358,15 @@ const randomInterval = document.getElementById('randomInterval');
 randomBtn.addEventListener('click', ()=>{
   randomActive = !randomActive;
   randomBtn.innerText = randomActive ? 'Random ON' : 'Random OFF';
-  if(randomActive) scheduleRandom();
-  else clearTimeout(randomTimer);
+  if(randomActive) {
+    triggerRandom();
+    scheduleRandom();
+  } else clearTimeout(randomTimer);
 });
 
 function scheduleRandom(){
   let intervalSec = parseInt(randomInterval.value);
-  if(intervalSec === 0) intervalSec = Math.floor(Math.random()*10)+5; // случайно 5-15 секунд
+  if(intervalSec === 0) intervalSec = Math.floor(Math.random()*10)+5;
   randomTimer = setTimeout(()=>{
     triggerRandom();
     if(randomActive) scheduleRandom();
@@ -304,7 +375,7 @@ function scheduleRandom(){
 
 function triggerRandom(){
   const total = audioElements.length;
-  const activeCount = Math.floor(Math.random()*(total)+1); // от 1 до total
+  const activeCount = Math.floor(Math.random()*(total)+1);
   const indices = Array.from({length: total}, (_, i)=>i);
   shuffle(indices);
   const selected = indices.slice(0, activeCount);
@@ -318,7 +389,7 @@ function triggerRandom(){
   });
 }
 
-// Перемешивание массива
+// ======= Shuffle =======
 function shuffle(array){
   for(let i=array.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
