@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR | LOADING PROGRESS</title>
+<title>BUCKET ASMR | NO TIMER EDITION</title>
 <style>
-  /* ... (весь твой CSS остается прежним, добавляю только стили для прогресса) ... */
   body, html {
     margin: 0; padding: 0; height: 100%;
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
@@ -15,14 +14,41 @@
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
   }
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
-  .container { position: relative; z-index: 10; display:flex; flex-direction: column; align-items:center; padding:20px; height: 100vh; box-sizing: border-box; }
+  
+  .container { 
+    position: relative; z-index: 10; 
+    display:flex; flex-direction: column; align-items:center; 
+    padding:20px; height: 100vh; box-sizing: border-box; 
+  }
+
   .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
   h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
-  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
-  .controls > button { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); font-size: 13px; }
-  #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); }
-  .sound-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5; }
   
+  #helpBtn {
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+  }
+
+  #langBtn {
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;
+  }
+
+  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
+  .controls > button { 
+    padding:8px 14px; border:none; border-radius:12px; 
+    background: rgba(255,255,255,0.2); color:white; cursor:pointer; 
+    font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
+  }
+  #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); }
+  #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
+
+  .sound-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
+  }
+
   .sound-button { 
     aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
     background: rgba(255,255,255,0.15); color:white; font-weight:bold; 
@@ -31,23 +57,54 @@
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
   }
 
-  /* Стили прогресса */
-  .progress-text { font-size: 10px; opacity: 0.7; margin-top: 4px; font-weight: normal; }
-  .bg-progress {
-    position: absolute; bottom: 0; left: 0; width: 0%; height: 100%;
-    background: rgba(255, 180, 0, 0.1); z-index: -1; transition: width 0.2s;
-  }
-  .sound-button.loading { border-color: #ffb400; }
-  
-  /* Оригинальные стили из твоего кода */
+  /* Состояния кнопок */
   .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.3); }
-  .tile-vis { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 30px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; display: none; }
+  .sound-button.broken { border: 2px solid rgba(255, 0, 0, 0.5) !important; opacity: 0.6; }
+  .sound-button.repairing { animation: pulse-repair 1.5s infinite; }
+
+  @keyframes pulse-repair {
+    0% { background: rgba(255,255,255,0.15); }
+    50% { background: rgba(255, 180, 0, 0.2); }
+    100% { background: rgba(255,255,255,0.15); }
+  }
+
+  .tile-vis {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 30px; height: 4px; background: rgba(255,255,255,0.2);
+    border-radius: 2px; overflow: hidden; display: none;
+  }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
   .sound-button.active .tile-vis { display: block; }
+
+  .custom-select-container { position: relative; }
+  .select-trigger {
+    padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2);
+    color: white; cursor: pointer; font-weight: bold; font-size: 13px; min-width: 80px; text-align: center;
+  }
+  .custom-dropdown {
+    display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+    background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; min-width: 120px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(15px);
+  }
+  .custom-dropdown.open { display: flex; }
+  .custom-dropdown button { padding: 10px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
-  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-  .modal-content { background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400; padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%; }
-  .modal-btn { background:#ffb400; border:none; padding:12px 30px; border-radius:12px; font-weight:bold; cursor:pointer; color:black; margin-top: 10px; }
+  
+  .modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
+  }
+  .modal-content {
+    background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
+    padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%;
+    box-shadow: 0 0 30px rgba(255, 180, 0, 0.2);
+  }
+  .modal-btn {
+    background:#ffb400; border:none; padding:12px 30px; border-radius:12px; 
+    font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px;
+  }
 </style>
 </head>
 <body>
@@ -59,30 +116,42 @@
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
     <h2 style="color: #ffb400; margin-top: 0;">Smart ASMR Player</h2>
-    <p>Нажми "Поехали", чтобы начать загрузку звуков с индикацией прогресса.</p>
+    <p style="line-height: 1.6; font-size: 16px;">
+      <b>Интеллектуальный режим:</b> кнопка Play пропускает битые звуки, пока система их чинит.<br><br>
+      <i>Чиним на лету, слушаем без пауз. Таймер отключен.</i>
+    </p>
     <button class="modal-btn" id="closeWelcome">Поехали!</button>
   </div>
 </div>
 
 <div class="container">
-  <div class="title-bar">
+  <div class="title-bar" id="mainHeader">
     <h1 id="title">BUCKET ASMR</h1>
+    <div id="helpBtn">?</div>
     <button id="langBtn">EN</button>
   </div>
 
   <div class="controls">
     <button id="randomBtn">Play</button>
-    <button id="repairBtn" onclick="location.reload()">RELOAD</button>
-  </div>
+    <button id="repairBtn">REPAIR</button>
+    <div class="custom-select-container">
+        <div class="select-trigger" id="speedTrigger">30s</div>
+        <div class="custom-dropdown" id="speedDropdown">
+            <button onclick="setSpeed(10, '10s')">10s</button>
+            <button onclick="setSpeed(30, '30s')">30s</button>
+            <button onclick="setSpeed(60, '1m')">1m</button>
+        </div>
+    </div>
+    </div>
 
   <div id="soundGrid" class="sound-grid"></div>
 </div>
 
 <script>
 let audioCtx = null, globalAnalyser = null;
-let langIdx = 0;
+let currentSpeedValue = 30, langIdx = 0; // currentSleepValue удален
 const langOrder = ['en', 'uk', 'ru'];
-let audioElements=[], randomActive=false;
+let audioElements=[], particles=[], randomActive=false; // timerInterval удален
 
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
@@ -93,131 +162,216 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { loading: "Loading", ready: "Ready" },
-  ru: { loading: "Загрузка", ready: "Готов" },
-  uk: { loading: "Завантаження", ready: "Готов" }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR" }, // start/stop удалены
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ" },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
 };
 
+// --- СИСТЕМА УМНОГО РЕМОНТА + ДИСПЕТЧЕР ---
+
+function isSoundReady(el) {
+    return el.audio.readyState >= 2 && !el.btn.classList.contains('broken') && !el.btn.classList.contains('repairing');
+}
+
+function autoRepair(state, soundFile) {
+    state.btn.classList.add('repairing');
+    state.btn.classList.remove('broken');
+    
+    const alternatives = [
+        `https://raw.githubusercontent.com/bucketasmr/sounds/main/${soundFile}`,
+        `https://raw.githubusercontent.com/bucketasmr/sounds/master/${soundFile}`,
+        `https://raw.githubusercontent.com/bucketasmr/sounds/main/${soundFile.replace('.mp3', '.wav')}`
+    ];
+
+    let currentTry = 0;
+    const tryNext = () => {
+        if (currentTry < alternatives.length) {
+            state.audio.src = alternatives[currentTry];
+            state.audio.load();
+            currentTry++;
+        } else {
+            state.btn.classList.add('broken');
+            state.btn.classList.remove('repairing');
+        }
+    };
+
+    tryNext();
+
+    state.audio.addEventListener('canplaythrough', function success() {
+        state.btn.classList.remove('repairing', 'broken');
+        state.btn.style.boxShadow = "0 0 15px rgba(0, 255, 100, 0.4)";
+        setTimeout(() => state.btn.style.boxShadow = "none", 1000);
+        state.audio.removeEventListener('canplaythrough', success);
+    }, { once: true });
+
+    state.audio.addEventListener('error', () => tryNext(), { once: true });
+}
+
+function runRandom() { 
+  if(!randomActive) return; 
+
+  // Диспетчер: выбираем только те, что сейчас реально работают
+  let readySounds = audioElements.filter(el => isSoundReady(el));
+
+  if (readySounds.length === 0) {
+      console.log("Ждем, пока Watchdog починит хоть что-то...");
+      setTimeout(() => { if(randomActive) runRandom(); }, 3000);
+      return;
+  }
+
+  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); 
+  let shuffled = readySounds.sort(() => 0.5 - Math.random()); 
+  
+  audioElements.forEach(el => fadeOut(el));
+  shuffled.slice(0, count).forEach(el => fadeIn(el));
+
+  setTimeout(() => { if(randomActive) runRandom(); }, currentSpeedValue * 1000); 
+}
+
+// --- ЯДРО АУДИО ---
+
 function initAudioContext() {
-  if (audioCtx) return;
+  if (audioCtx && audioCtx.state !== 'closed') {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   globalAnalyser = audioCtx.createAnalyser();
+  globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
 }
 
-// ГЛАВНАЯ ФУНКЦИЯ ЗАГРУЗКИ С ПРОГРЕССОМ
-function loadWithProgress(state, file) {
-  const xhr = new XMLHttpRequest();
-  const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${Date.now()}`;
-  
-  xhr.open('GET', url, true);
-  xhr.responseType = 'blob';
-
-  xhr.onprogress = (event) => {
-    if (event.lengthComputable) {
-      const percent = Math.round((event.loaded / event.total) * 100);
-      state.btn.querySelector('.progress-text').innerText = `${percent}%`;
-      state.btn.querySelector('.bg-progress').style.width = `${percent}%`;
-    } else {
-      state.btn.querySelector('.progress-text').innerText = "...";
-    }
-  };
-
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      const blob = xhr.response;
-      state.audio.src = URL.createObjectURL(blob);
-      state.ready = true;
-      state.btn.classList.remove('loading');
-      state.btn.querySelector('.progress-text').innerText = "";
-      state.btn.querySelector('.bg-progress').style.width = "0%";
-    } else {
-      state.btn.querySelector('.progress-text').innerText = "Err";
-    }
-  };
-
-  xhr.onerror = () => state.btn.querySelector('.progress-text').innerText = "Retry";
-  xhr.send();
+function setupWebAudio(el) {
+  if (!audioCtx || el.source) return;
+  try {
+    el.source = audioCtx.createMediaElementSource(el.audio);
+    el.gainNode = audioCtx.createGain();
+    el.analyser = audioCtx.createAnalyser();
+    el.analyser.fftSize = 32;
+    el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
+    el.source.connect(el.gainNode);
+    el.gainNode.connect(el.analyser);
+    el.analyser.connect(globalAnalyser);
+    el.gainNode.gain.value = 0;
+  } catch (e) { console.error("Web Audio bind error", e); }
 }
 
 const grid = document.getElementById('soundGrid');
-sounds.forEach((s, idx) => {
+sounds.forEach((s) => {
   const btn = document.createElement('button');
-  btn.className = 'sound-button loading';
-  btn.innerHTML = `
-    <div class="bg-progress"></div>
-    <span class="name-text">${s.name['en']}</span>
-    <span class="progress-text">0%</span>
-    <div class="tile-vis"><div class="tile-vis-bar"></div></div>
-  `;
+  btn.className = 'sound-button';
+  btn.innerHTML = `<span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
 
   const audio = new Audio();
-  audio.loop = true;
-  audio.crossOrigin = "anonymous";
+  audio.src = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${s.file}`;
+  audio.loop = true; audio.crossOrigin = "anonymous";
+  audio.preload = "auto";
+  audio.setAttribute('playsinline', '');
 
-  const state = { 
-    audio, btn, ready: false, color: s.color, 
-    visBar: btn.querySelector('.tile-vis-bar'), 
-    source: null, gainNode: null, analyser: null 
+  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null };
+
+  audio.onerror = () => {
+      btn.style.backgroundColor = "rgba(255, 0, 0, 0.6)";
+      setTimeout(() => {
+          btn.style.backgroundColor = "rgba(255,255,255,0.15)";
+          autoRepair(state, s.file);
+      }, 500);
   };
 
-  btn.onclick = () => {
-    initAudioContext();
-    if (!state.ready) return;
-    audio.paused ? fadeIn(state) : fadeOut(state);
+  btn.onclick = () => { 
+    initAudioContext(); 
+    if(state.targetVol === 0) fadeIn(state); else fadeOut(state); 
   };
-
   audioElements.push(state);
-  loadWithProgress(state, s.file);
 });
 
-// Логика FadeIn / FadeOut (твоя оригинальная)
 function fadeIn(el) {
+  if (!audioCtx) initAudioContext();
   el.audio.play().then(() => {
-    if (!el.source) {
-        el.source = audioCtx.createMediaElementSource(el.audio);
-        el.gainNode = audioCtx.createGain();
-        el.analyser = audioCtx.createAnalyser();
-        el.source.connect(el.gainNode);
-        el.gainNode.connect(el.analyser);
-        el.analyser.connect(globalAnalyser);
-    }
+    if (!el.source) setupWebAudio(el);
     el.btn.classList.add('active');
-    el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
-  });
+    el.targetVol = 0.6;
+    if(el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
+  }).catch(() => {});
 }
 
 function fadeOut(el) {
   el.btn.classList.remove('active');
-  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
-  setTimeout(() => { if(!el.btn.classList.contains('active')) el.audio.pause(); }, 500);
+  el.targetVol = 0;
+  if(el.gainNode && audioCtx) {
+    el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
+    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 500);
+  } else { el.audio.pause(); }
 }
 
-// Визуализация звезд (упрощенная для примера)
-const vCanvas = document.getElementById('vis'); const vCtx = vCanvas.getContext('2d');
-function res() { vCanvas.width = innerWidth; vCanvas.height = innerHeight; }
-window.onresize = res; res();
+// --- ВИЗУАЛИЗАЦИЯ И ЗВЕЗДЫ ---
 
-function animate() {
-  vCtx.clearRect(0,0,innerWidth,innerHeight);
+const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
+const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
+function res() { starCanvas.width = visCanvas.width = innerWidth; starCanvas.height = visCanvas.height = innerHeight; }
+res();
+const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
+
+function animate(){
+  starCtx.clearRect(0,0,innerWidth,innerHeight);
+  starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; starCtx.beginPath(); starCtx.arc(s.x,s.y,s.r,0,Math.PI*2); starCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; starCtx.fill(); });
+  visCtx.clearRect(0,0,innerWidth,innerHeight);
+  
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
-      const data = new Uint8Array(el.analyser.frequencyBinCount);
-      el.analyser.getByteFrequencyData(data);
-      const vol = data[0];
-      el.visBar.style.width = `${(vol/255)*100}%`;
-      el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.5));
+        el.analyser.getByteFrequencyData(el.tileDataArray);
+        let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
+        vol /= el.tileDataArray.length;
+        el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
+        el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
+        if(Math.random() < (0.05 + vol/255*0.4)){
+          particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        }
+    } else { 
+        if(!el.btn.classList.contains('repairing')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        el.visBar.style.width = '0%';
     }
   });
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
+    visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    visCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`;
+    visCtx.fill();
+    if(p.al <= 0) particles.splice(i, 1);
+  }
   requestAnimationFrame(animate);
 }
 animate();
 
-document.getElementById('closeWelcome').onclick = () => {
-    initAudioContext();
-    document.getElementById('welcomeModal').style.display='none';
-};
+// --- УПРАВЛЕНИЕ ---
+function setSpeed(v, l) { currentSpeedValue=v; document.getElementById('speedTrigger').innerText=l; closeMenus(); }
+// setSleep удален
+function closeMenus() { document.querySelectorAll('.custom-dropdown').forEach(d=>d.classList.remove('open')); }
+document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); closeMenus(); document.getElementById('speedDropdown').classList.toggle('open'); };
+// обработчик sleepTrigger удален
+
+function updateUI() {
+  const t = uiTL[langOrder[langIdx]];
+  document.getElementById('title').innerText = t.title;
+  document.getElementById('langBtn').innerText = t.code;
+  document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
+  // Кнопка timerBtn удалена из UI
+  document.getElementById('repairBtn').innerText = t.repair;
+  audioElements.forEach((el, i) => { el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]; });
+}
+
+document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
+document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); updateUI(); };
+
+// Обработчик timerBtn.onclick полностью удален
+
+document.getElementById('repairBtn').onclick = () => { location.reload(); };
+document.getElementById('helpBtn').onclick = () => alert("Smart Dispatcher: Play only works for loaded sounds. Watchdog repairs broken ones.");
+document.getElementById('closeWelcome').onclick = () => document.getElementById('welcomeModal').style.display='none';
+window.onresize = res;
+updateUI();
 </script>
 </body>
 </html>
