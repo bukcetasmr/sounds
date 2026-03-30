@@ -87,8 +87,8 @@
     
     <select id="randomInterval">
       <optgroup id="labelSpeed" label="Switch speed:">
-        <option value="5" id="optFast">5s (Fast)</option>
-        <option value="30" id="optSmooth">30s (Smooth)</option>
+        <option value="10" id="optFast">10s (Fast)</option>
+        <option value="30" id="optSmooth" selected>30s (Smooth)</option>
         <option value="60" id="optSlow">1m (Slow)</option>
         <option value="300" id="optDeep">5m (Deep)</option>
       </optgroup>
@@ -121,14 +121,25 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { title: "BUCKET ASMR", play: "Play", pause: "Pause", speed: "Switch speed:", fast: "5s (Fast)", smooth: "30s (Smooth)", slow: "1m (Slow)", deep: "5m (Deep)", sleep: "Sleep timer:", start: "Start timer", stop: "Stop timer", min: "min", hour: "hour", hours: "hours" },
-  ru: { title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", speed: "Скорость смены:", fast: "5с (Быстро)", smooth: "30с (Плавно)", slow: "1м (Медленно)", deep: "5м (Глубоко)", sleep: "Таймер сна:", start: "Запуск таймера", stop: "Остановить", min: "мин", hour: "час", hours: "часа" },
-  uk: { title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", speed: "Швидкість зміни:", fast: "5с (Швидко)", smooth: "30с (Плавно)", slow: "1хв (Повільно)", deep: "5хв (Глибоко)", sleep: "Таймер сну:", start: "Запуск таймера", stop: "Зупинити", min: "хв", hour: "година", hours: "години" }
+  en: { title: "BUCKET ASMR", play: "Play", pause: "Pause", speed: "Switch speed:", fast: "10s (Fast)", smooth: "30s (Smooth)", slow: "1m (Slow)", deep: "5m (Deep)", sleep: "Sleep timer:", start: "Start timer", stop: "Stop timer", min: "min", hour: "hour", hours: "hours" },
+  ru: { title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", speed: "Скорость смены:", fast: "10с (Быстро)", smooth: "30с (Плавно)", slow: "1м (Медленно)", deep: "5м (Глубоко)", sleep: "Таймер сна:", start: "Запуск таймера", stop: "Остановить", min: "мин", hour: "час", hours: "часа" },
+  uk: { title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", speed: "Швидкість зміни:", fast: "10с (Швидко)", smooth: "30с (Плавно)", slow: "1хв (Повільно)", deep: "5хв (Глибоко)", sleep: "Таймер сну:", start: "Запуск таймера", stop: "Зупинити", min: "хв", hour: "година", hours: "години" }
 };
 
 let lang='en', audioElements=[], particles=[], randomActive=false, randomTimeout=null, timerInterval=null, timeLeft=0;
 
-// Stars effect
+// --- ИНТЕРАКТИВНЫЕ ЗВУКИ ---
+const clickSounds = [
+  new Audio(sounds[1].file), // Choko
+  new Audio(sounds[3].file), // Wax
+  new Audio(sounds[4].file)  // Wood
+];
+const brushSound = new Audio(sounds[0].file);
+brushSound.loop = true;
+brushSound.volume = 0;
+let isBrushing = false;
+
+// Звезды
 const starCanvas = document.getElementById('stars');
 const starCtx = starCanvas.getContext('2d');
 function resStars() { starCanvas.width = window.innerWidth; starCanvas.height = window.innerHeight; }
@@ -153,14 +164,13 @@ sounds.forEach((s, idx) => {
     <button class="mute-btn">🔇</button>
   `;
   grid.appendChild(track);
-  
   const audio = new Audio(s.file);
   audio.loop = true;
-  audio.volume = 1.0; // По умолчанию громкость 1.0 (уровень 6)
+  audio.volume = 0.5;
   
   const state = {
     audio: audio,
-    userVolume: 1.0, // Запоминаем уровень 6 как стандартный
+    userVolume: 0.5, 
     btn: track.querySelector('.sound-button'),
     muteBtn: track.querySelector('.mute-btn'),
     color: s.color,
@@ -171,11 +181,12 @@ sounds.forEach((s, idx) => {
     }
   };
 
-  state.updateStepsUI(1.0); // Закрашиваем все 6 полосок
+  state.updateStepsUI(0.5);
 
   const steps = track.querySelectorAll('.step');
   steps.forEach(st => {
-    st.addEventListener('click', () => {
+    st.addEventListener('click', (e) => {
+      e.stopPropagation();
       const vol = parseFloat(st.dataset.level);
       state.userVolume = vol; 
       audio.volume = vol; 
@@ -186,18 +197,61 @@ sounds.forEach((s, idx) => {
     });
   });
 
-  state.btn.addEventListener('click', () => {
+  state.btn.addEventListener('click', (e) => {
+    e.stopPropagation();
     if(audio.paused){ fadeIn(state); state.btn.classList.add('active'); }
     else { fadeOut(state); state.btn.classList.remove('active'); }
   });
 
-  state.muteBtn.addEventListener('click', () => {
+  state.muteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     audio.muted = !audio.muted;
     state.muteBtn.style.background = audio.muted ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)';
   });
 
   audioElements.push(state);
 });
+
+// --- ЛОГИКА ИНТЕРАКТИВА (ЭКРАН) ---
+window.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.controls') || e.target.closest('.sound-track') || e.target.closest('.lang-select')) return;
+  isBrushing = true;
+  
+  const rndSound = clickSounds[Math.floor(Math.random() * clickSounds.length)];
+  const clone = rndSound.cloneNode();
+  clone.volume = 0.4;
+  clone.play();
+  setTimeout(() => {
+    let fOut = setInterval(() => {
+      if (clone.volume > 0.05) clone.volume -= 0.05;
+      else { clone.pause(); clearInterval(fOut); }
+    }, 20);
+  }, 400);
+
+  createParticle(e.clientX, e.clientY, 'rgba(255,255,255,0.7)');
+});
+
+window.addEventListener('pointermove', (e) => {
+  if (!isBrushing) return;
+  if (brushSound.paused) brushSound.play();
+  if (brushSound.volume < 0.5) brushSound.volume += 0.05;
+  createParticle(e.clientX, e.clientY, sounds[0].color);
+});
+
+window.addEventListener('pointerup', stopBrushing);
+window.addEventListener('pointercancel', stopBrushing);
+
+function stopBrushing() {
+  isBrushing = false;
+  let fOutB = setInterval(() => {
+    if (brushSound.volume > 0.05) brushSound.volume -= 0.05;
+    else { brushSound.pause(); brushSound.volume = 0; clearInterval(fOutB); }
+  }, 30);
+}
+
+function createParticle(x, y, color) {
+  particles.push({ x, y, r: Math.random()*12+4, s: 0.4+Math.random()*0.4, al: 0.8, c: color });
+}
 
 function updateRandomBtnText() {
     const btn = document.getElementById('randomBtn');
@@ -225,7 +279,6 @@ function setLang(l) {
     updateRandomBtnText();
 }
 
-// Timer logic
 document.getElementById('timerBtn').addEventListener('click', function() {
     if (timerInterval) stopTimer(); else startTimer();
 });
@@ -266,7 +319,6 @@ function allOff() {
     });
 }
 
-// Random Logic
 document.getElementById('randomBtn').addEventListener('click', function() {
   randomActive = !randomActive;
   updateRandomBtnText();
@@ -276,11 +328,9 @@ document.getElementById('randomBtn').addEventListener('click', function() {
 
 function runRandom() {
   if(!randomActive) return;
-
   let count = Math.floor(Math.random()*2)+1;
   let shuffled = [...audioElements].sort(() => 0.5-Math.random());
   let nextActive = shuffled.slice(0, count);
-
   audioElements.forEach(el => {
     if (nextActive.includes(el)) {
       if (el.audio.paused || el.audio.muted) {
@@ -298,11 +348,9 @@ function runRandom() {
       }
     }
   });
-
   randomTimeout = setTimeout(runRandom, parseInt(document.getElementById('randomInterval').value)*1000);
 }
 
-// Visualization
 const visCanvas = document.getElementById('vis');
 const visCtx = visCanvas.getContext('2d');
 visCanvas.width = window.innerWidth; visCanvas.height = window.innerHeight;
@@ -320,10 +368,10 @@ function animate(){
     }
   });
   for(let i = particles.length - 1; i >= 0; i--){
-    const p = particles[i]; p.y -= p.s; p.al *= 0.997;
-    let baseColor = p.c.substring(0, p.c.lastIndexOf(',') + 1);
+    const p = particles[i]; p.y -= p.s; p.al *= 0.993;
+    let baseColor = p.c.includes('rgba') ? p.c.substring(0, p.c.lastIndexOf(',') + 1) : 'rgba(255,255,255,';
     visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    visCtx.fillStyle = `${baseColor}${p.al.toFixed(2)})`;
+    visCtx.fillStyle = p.c.includes('rgba') ? `${baseColor}${p.al.toFixed(2)})` : p.c;
     visCtx.fill();
     if(p.al < 0.01) particles.splice(i,1);
   }
@@ -339,10 +387,7 @@ function fadeIn(el) {
     let v = a.volume;
     el.fadeInterval = setInterval(() => { 
         v += 0.01; 
-        if(v >= targetVol) { 
-            a.volume = targetVol; 
-            clearInterval(el.fadeInterval); 
-        } else a.volume = v; 
+        if(v >= targetVol) { a.volume = targetVol; clearInterval(el.fadeInterval); } else a.volume = v; 
     }, 30);
 }
 
@@ -352,11 +397,7 @@ function fadeOut(el) {
     let v = a.volume;
     el.fadeInterval = setInterval(() => { 
         v -= 0.01; 
-        if(v <= 0) { 
-            a.volume = 0; 
-            a.pause(); 
-            clearInterval(el.fadeInterval); 
-        } else a.volume = v; 
+        if(v <= 0) { a.volume = 0; a.pause(); clearInterval(el.fadeInterval); } else a.volume = v; 
     }, 30);
 }
 
