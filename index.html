@@ -63,6 +63,7 @@
     border-radius: 2px; overflow: hidden; display: none;
   }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
+  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.1); }
   .sound-button.active .tile-vis { display: block; }
 
   .custom-select-container { position: relative; }
@@ -100,7 +101,7 @@
 <div id="helpModal">
   <div class="help-content">
     <h2 id="modalTitle" style="color: #ffb400; margin-top: 0;">GUIDE</h2>
-    <p id="hRepairD">If tiles blink red, press REPAIR to reload audio engine.</p>
+    <p id="hRepairD">If tiles blink red or sounds hang, press REPAIR.</p>
     <button id="closeHelp" style="background:#ffb400; border:none; padding:12px 25px; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:15px; color:black;">OK</button>
   </div>
 </div>
@@ -158,9 +159,9 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Пуск", stop: "Стоп", repair: "ЛАГОДИТИ" }
 };
 
-async function initAudioContext() {
+function initAudioContext() {
   if (audioCtx && audioCtx.state !== 'closed') {
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     return;
   }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -168,12 +169,6 @@ async function initAudioContext() {
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
   dataArray = new Uint8Array(globalAnalyser.frequencyBinCount);
-  
-  const osc = audioCtx.createOscillator();
-  osc.connect(audioCtx.destination);
-  osc.start(0); osc.stop(0);
-
-  audioElements.forEach(el => setupWebAudio(el));
 }
 
 function setupWebAudio(el) {
@@ -203,41 +198,33 @@ sounds.forEach((s) => {
   audio.preload = "auto";
   audio.setAttribute('playsinline', ''); audio.setAttribute('webkit-playsinline', '');
 
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null };
-  btn.onclick = async () => { 
-    await initAudioContext(); 
-    if (state.audio.error || state.audio.networkState === 3) state.audio.load();
+  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null };
+  btn.onclick = () => { 
+    initAudioContext(); 
     if(state.targetVol === 0) fadeIn(state); else fadeOut(state); 
   };
   audioElements.push(state);
 });
 
-// КНОПКА REPAIR: Принудительная перезагрузка всего
-document.getElementById('repairBtn').onclick = async () => {
-    const btn = document.getElementById('repairBtn');
-    btn.innerText = "...";
-    
-    // Закрываем старый контекст
-    if (audioCtx) await audioCtx.close();
-    audioCtx = null;
-    
-    // Пересоздаем всё
-    await initAudioContext();
-    
+// УЛУЧШЕННЫЙ REPAIR
+document.getElementById('repairBtn').onclick = () => {
+    randomActive = false;
     audioElements.forEach(el => {
+        el.targetVol = 0;
         el.audio.pause();
-        el.audio.load(); // Перезагружаем файл
-        el.source = null; // Сбрасываем узел, чтобы setupWebAudio создала новый
-        fadeOut(el);
+        el.btn.classList.remove('active');
+        if(el.gainNode) el.gainNode.gain.setValueAtTime(0, audioCtx ? audioCtx.currentTime : 0);
     });
     
-    setTimeout(() => {
-        btn.innerText = uiTL[langOrder[langIdx]].repair;
-        alert("Audio Engine Reset Done");
-    }, 500);
+    // Если контекст завис - пробуем оживить
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    
+    updateUI();
+    alert("Audio Engine Reset");
 };
 
 function fadeIn(el) {
+  if (!audioCtx) initAudioContext();
   el.audio.play().then(() => {
     if (!el.source) setupWebAudio(el);
     el.btn.classList.add('active');
@@ -255,11 +242,10 @@ function fadeOut(el) {
   el.targetVol = 0;
   if(el.gainNode && audioCtx) {
     el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
-    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
+    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 500);
   } else { el.audio.pause(); }
 }
 
-// Визуализация (звезды и частицы)
 const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
 const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
 function res() { starCanvas.width = visCanvas.width = innerWidth; starCanvas.height = visCanvas.height = innerHeight; }
@@ -281,7 +267,10 @@ function animate(){
         if(Math.random() < (0.05 + vol/255*0.4)){
           particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
         }
-    } else { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; }
+    } else { 
+        el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        el.visBar.style.width = '0%';
+    }
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -312,7 +301,7 @@ function updateUI() {
 }
 
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
-document.getElementById('randomBtn').onclick = async () => { await initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); updateUI(); };
+document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); updateUI(); };
 
 function runRandom() { 
   if(!randomActive) return; 
@@ -322,8 +311,8 @@ function runRandom() {
   setTimeout(() => { if(randomActive) runRandom(); }, currentSpeedValue * 1000); 
 }
 
-document.getElementById('timerBtn').onclick = async () => {
-  await initAudioContext();
+document.getElementById('timerBtn').onclick = () => {
+  initAudioContext();
   if(timerInterval) { clearInterval(timerInterval); timerInterval=null; document.getElementById('timerDisplay').innerText="00:00"; }
   else {
     let left = currentSleepValue;
