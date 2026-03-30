@@ -70,8 +70,8 @@
 
   .sound-button {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     background: rgba(255,255,255,0.3);
     border-radius: 20px;
     display: flex;
@@ -82,6 +82,7 @@
     transition: 0.2s;
     backdrop-filter: blur(8px);
     text-align: center;
+    padding: 10px;
   }
 
   .sound-button:hover {
@@ -94,14 +95,40 @@
   }
 
   .sound-button span {
-    margin-top: 8px;
+    margin-bottom: 8px;
     font-size: 14px;
     pointer-events: none;
   }
 
   .volume-slider {
-    margin-top: 8px;
     width: 80%;
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.2);
+    outline: none;
+    transition: 0.2s;
+    cursor: pointer;
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffb400;
+    cursor: pointer;
+    box-shadow: 0 0 5px #ffb400;
+  }
+
+  .volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffb400;
+    cursor: pointer;
+    box-shadow: 0 0 5px #ffb400;
   }
 
   canvas {
@@ -163,9 +190,14 @@ sounds.forEach((s, i)=>{
   audio.volume = 0.5;
 
   const slider = btn.querySelector('.volume-slider');
-  slider.addEventListener('input', e=>{ audio.volume = e.target.value; });
+  slider.addEventListener('input', e=>{
+    audio.volume = e.target.value;
+  });
 
   btn.addEventListener('click', e=>{
+    // если клик был на ползунке, не переключаем звук
+    if(e.target.classList.contains('volume-slider')) return;
+
     if(audio.paused){
       audio.play();
       btn.classList.add('active');
@@ -190,7 +222,7 @@ function animate(){
     if(!a.audio.paused){
       const x = Math.random()*canvas.width;
       const y = Math.random()*canvas.height;
-      const radius = a.audio.volume*50 + Math.random()*20;
+      const radius = a.audio.volume*60 + Math.random()*20;
       ctx.beginPath();
       ctx.arc(x,y,radius,0,Math.PI*2);
       ctx.fillStyle = `rgba(255,255,255,${a.audio.volume*0.3})`;
