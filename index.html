@@ -6,200 +6,48 @@
 <title>BUCKET ASMR</title>
 <style>
   body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+    margin: 0; padding: 0; height: 100%;
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
-    font-family: Arial, sans-serif;
-    color: white;
-    overflow: hidden;
+    font-family: Arial, sans-serif; color: white; overflow: hidden;
   }
 
   body::after {
     content: "";
-    position: fixed;
-    top:0; left:0;
-    width:100%;
-    height:100%;
+    position: fixed; top:0; left:0; width:100%; height:100%;
     background: transparent url('https://raw.githubusercontent.com/andreygolikov/star-background/main/stars.png') repeat top center;
-    z-index:0;
-    pointer-events:none;
+    z-index:0; pointer-events:none;
   }
 
-  .overlay {
-    position: absolute;
-    top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.4);
-    z-index: 1;
-  }
+  .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:1; }
 
-  .container {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
+  .container { position: relative; z-index: 2; display:flex; flex-direction: column; align-items:center; padding:20px; }
 
-  .title-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+  .title-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  h1 { margin:0; font-size:28px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
 
-  h1 {
-    margin: 0;
-    font-size: 28px;
-    color: #ffb400;
-    text-shadow: 0 0 10px #ffb400;
-  }
+  .lang-select { position: relative; }
+  .lang-select button { padding:5px 10px; border-radius:12px; border:none; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); transition:0.2s; }
+  .lang-select button:hover { background: rgba(255,255,255,0.4); }
+  .lang-dropdown { display:none; position:absolute; top:35px; left:0; background: rgba(0,0,0,0.85); border-radius:12px; overflow:hidden; flex-direction:column; z-index:9999; }
+  .lang-dropdown button { padding:8px 14px; border:none; background:transparent; color:white; cursor:pointer; font-weight:bold; text-align:left; transition:0.2s; }
+  .lang-dropdown button:hover { background: rgba(255,255,255,0.2); }
 
-  .lang-select {
-    position: relative;
-  }
+  .controls { margin-bottom:20px; display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
+  .controls button, .controls select { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:black; cursor:pointer; font-weight:bold; transition:0.2s; backdrop-filter: blur(5px); }
+  .controls button:hover, .controls select:hover { background: rgba(255,255,255,0.4); }
 
-  .lang-select button {
-    padding: 5px 10px;
-    border-radius: 12px;
-    border: none;
-    background: rgba(255,255,255,0.2);
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    backdrop-filter: blur(5px);
-    transition: 0.2s;
-  }
+  .sound-grid { display:flex; flex-wrap: nowrap; overflow-x:auto; gap:20px; padding-bottom:20px; width:100%; justify-content:center; }
+  .sound-track { display:flex; flex-direction: column; align-items:center; flex-shrink:0; width:70px; }
+  .volume-slider { writing-mode: bt-lr; -webkit-appearance: slider-vertical; width:100%; height:150px; margin-bottom:10px; background: rgba(255,255,255,0.2); border-radius:8px; outline:none; cursor:pointer; }
+  .volume-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#ffb400; box-shadow:0 0 5px #ffb400; cursor:pointer; }
+  .volume-slider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#ffb400; cursor:pointer; box-shadow:0 0 5px #ffb400; }
 
-  .lang-select button:hover {
-    background: rgba(255,255,255,0.4);
-  }
+  .sound-button { width:70px; height:40px; border:none; border-radius:12px; background: rgba(255,255,255,0.3); color:white; font-weight:bold; cursor:pointer; text-align:center; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(6px); transition:0.2s; }
+  .sound-button.active { box-shadow: 0 0 10px #fff; }
 
-  .lang-dropdown {
-    display: none;
-    position: absolute;
-    top: 35px;
-    left: 0;
-    background: rgba(0,0,0,0.85);
-    border-radius: 12px;
-    overflow: hidden;
-    flex-direction: column;
-    z-index: 9999; /* Слой выше всех кнопок */
-  }
+  .timer-display { color: #9b59b6; font-weight:bold; font-size:16px; margin-left:10px; }
 
-  .lang-dropdown button {
-    padding: 8px 14px;
-    border: none;
-    background: transparent;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    text-align: left;
-    transition: 0.2s;
-  }
-
-  .lang-dropdown button:hover {
-    background: rgba(255,255,255,0.2);
-  }
-
-  .random-controls {
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-  }
-
-  .random-controls button, .random-controls select {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.2);
-    color: black; /* Исправлено для читаемости */
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
-    backdrop-filter: blur(5px);
-  }
-
-  .random-controls button:hover, .random-controls select:hover {
-    background: rgba(255,255,255,0.4);
-  }
-
-  .sound-grid {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 20px;
-    padding-bottom: 20px;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .sound-track {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    width: 70px;
-  }
-
-  .volume-slider {
-    writing-mode: bt-lr;
-    -webkit-appearance: slider-vertical;
-    width: 100%;
-    height: 150px;
-    margin-bottom: 10px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 8px;
-    outline: none;
-    cursor: pointer;
-  }
-
-  .volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #ffb400;
-    box-shadow: 0 0 5px #ffb400;
-    cursor: pointer;
-  }
-
-  .volume-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #ffb400;
-    cursor: pointer;
-    box-shadow: 0 0 5px #ffb400;
-  }
-
-  .sound-button {
-    width: 70px;
-    height: 40px;
-    border: none;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.3);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(6px);
-    transition: 0.2s;
-  }
-
-  .sound-button.active {
-    box-shadow: 0 0 10px #fff;
-  }
-
-  canvas {
-    position: fixed;
-    top:0; left:0;
-    z-index: 0;
-  }
+  canvas { position: fixed; top:0; left:0; z-index: 0; }
 </style>
 </head>
 <body>
@@ -218,15 +66,26 @@
     </div>
   </div>
 
-  <div class="random-controls">
+  <div class="controls">
     <button id="randomBtn">Random OFF</button>
     <select id="randomInterval">
-      <option value="0">Random</option>
+      <option value="0">Random time</option>
       <option value="30">30 sec</option>
       <option value="60">1 m</option>
       <option value="120">2 m</option>
       <option value="300">5 m</option>
     </select>
+
+    <!-- Таймер -->
+    <select id="autoOffSelect">
+      <option value="0">Timer: Off</option>
+      <option value="300">Timer: 5 min</option>
+      <option value="1200">Timer: 20 min</option>
+      <option value="3600">Timer: 1 hour</option>
+      <option value="28800">Timer: 8 hours</option>
+    </select>
+    <button id="timerBtn">Start Timer</button>
+    <span class="timer-display" id="timerDisplay">00:00</span>
   </div>
 
   <div class="sound-grid" id="soundGrid"></div>
@@ -235,167 +94,143 @@
 <canvas id="vis"></canvas>
 
 <script>
-// ======= Sounds setup =======
 const sounds = [
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name: {en:'Brush', ru:'Кисть', uk:'Пензель'}, color: 'rgba(150,100,255,0.2)'},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name: {en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color: 'rgba(139,69,19,0.2)'},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name: {en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color: 'rgba(255,105,180,0.2)'},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name: {en:'Wax', ru:'Воск', uk:'Віск'}, color: 'rgba(255,165,0,0.2)'},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name: {en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color: 'rgba(255,255,0,0.2)'},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name: {en:'Pink brush', ru:'Розовая щетка', uk:'Рожева щiтка'}, color: 'rgba(255,182,193,0.2)'}
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.2)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.2)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.2)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.2)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name:{en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color:'rgba(255,255,0,0.2)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name:{en:'Pink brush', ru:'Розовая щетка', uk:'Рожева щiтка'}, color:'rgba(255,182,193,0.2)'}
 ];
 
-let lang = 'en';
-const grid = document.getElementById('soundGrid');
-const audioElements = [];
-const particles = [];
+let lang='en', audioElements=[], particles=[];
+const grid=document.getElementById('soundGrid');
 
-// Создаем треки
+// ===== Создание треков =====
 sounds.forEach((s,i)=>{
-  const track = document.createElement('div');
-  track.className = 'sound-track';
-  track.innerHTML = `
-    <input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">
-    <button class="sound-button">${s.name[lang]}</button>
-  `;
+  const track=document.createElement('div'); track.className='sound-track';
+  track.innerHTML=`<input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">
+                   <button class="sound-button">${s.name[lang]}</button>`;
   grid.appendChild(track);
 
-  const audio = new Audio(s.file);
-  audio.loop = true;
-  audio.volume = 0.5;
+  const audio=new Audio(s.file); audio.loop=true; audio.volume=0.5;
+  const slider=track.querySelector('.volume-slider');
+  const btn=track.querySelector('.sound-button');
 
-  const slider = track.querySelector('.volume-slider');
-  const btn = track.querySelector('.sound-button');
-
-  slider.addEventListener('input', e => { audio.volume = e.target.value; });
+  slider.addEventListener('input', e=>{ audio.volume=e.target.value; });
   btn.addEventListener('click', e=>{
-    if(audio.paused){
-      audio.play();
-      btn.classList.add('active');
-    } else {
-      audio.pause();
-      btn.classList.remove('active');
-    }
+    if(audio.paused){ audio.play(); btn.classList.add('active'); }
+    else { audio.pause(); btn.classList.remove('active'); }
   });
-
-  audioElements.push({audio, btn, slider, color: s.color});
+  audioElements.push({audio, btn, slider, color:s.color});
 });
 
-// ======= Canvas particles =======
-const canvas = document.getElementById('vis');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
+// ===== Canvas визуализация =====
+const canvas=document.getElementById('vis'), ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 function animate(){
-  ctx.fillStyle = 'rgba(0,0,0,0.05)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
+  ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,0,canvas.width,canvas.height);
   audioElements.forEach(a=>{
-    if(!a.audio.paused && Math.random() < 0.3){
-      particles.push({
-        x: Math.random()*canvas.width,
-        y: canvas.height + 10,
-        radius: a.audio.volume*15 + Math.random()*10,
-        speed: 0.2 + Math.random()*0.3,
-        alpha: 0.05 + Math.random()*0.1,
-        color: a.color
-      });
+    if(!a.audio.paused && Math.random()<0.3){
+      particles.push({x:Math.random()*canvas.width, y:canvas.height+10,
+                      radius:a.audio.volume*15+Math.random()*10,
+                      speed:0.2+Math.random()*0.3, alpha:0.05+Math.random()*0.1,
+                      color:a.color});
     }
   });
-
-  for(let i=particles.length-1; i>=0; i--){
-    const p = particles[i];
-    p.y -= p.speed;
-    p.alpha *= 0.995;
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
-    ctx.fillStyle = p.color.replace('0.2', p.alpha.toFixed(2));
-    ctx.fill();
-    if(p.alpha < 0.01) particles.splice(i,1);
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i]; p.y-=p.speed; p.alpha*=0.995;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fillStyle=p.color.replace('0.2', p.alpha.toFixed(2)); ctx.fill();
+    if(p.alpha<0.01) particles.splice(i,1);
   }
-
   audioElements.forEach(a=>{
-    if(!a.audio.paused){
-      a.btn.style.backgroundColor = a.color.replace('0.2','0.7');
-    } else {
-      a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)';
-    }
+    a.btn.style.backgroundColor = !a.audio.paused ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
   });
-
   requestAnimationFrame(animate);
 }
 animate();
+window.addEventListener('resize', ()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 
-window.addEventListener('resize', ()=>{
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
-
-// ======= Language =======
-const langBtn = document.getElementById('langBtn');
-const langDropdown = document.getElementById('langDropdown');
-
-langBtn.addEventListener('click', ()=>{
-  langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex';
-  langDropdown.style.flexDirection = 'column';
-});
-
+// ===== Language =====
+const langBtn=document.getElementById('langBtn');
+const langDropdown=document.getElementById('langDropdown');
+langBtn.addEventListener('click', ()=>{ langDropdown.style.display = langDropdown.style.display==='flex'?'none':'flex'; langDropdown.style.flexDirection='column'; });
 function setLang(l){
-  lang = l;
+  lang=l;
   document.getElementById('title').innerText = lang==='en'?'BUCKET ASMR':(lang==='ru'?'ВЕДРО АСМР':'ВIДРО АСМР');
   audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
-  langDropdown.style.display = 'none';
+  langDropdown.style.display='none';
 }
 
-// ======= Randomizer =======
-let randomActive = false;
-let randomTimer = null;
-
-const randomBtn = document.getElementById('randomBtn');
-const randomInterval = document.getElementById('randomInterval');
-
+// ===== Randomizer =====
+let randomActive=false, randomTimer=null;
+const randomBtn=document.getElementById('randomBtn'), randomInterval=document.getElementById('randomInterval');
 randomBtn.addEventListener('click', ()=>{
-  randomActive = !randomActive;
-  randomBtn.innerText = randomActive ? 'Random ON' : 'Random OFF';
-  if(randomActive) {
-    triggerRandom();
-    scheduleRandom();
-  } else clearTimeout(randomTimer);
+  randomActive=!randomActive; randomBtn.innerText=randomActive?'Random ON':'Random OFF';
+  if(randomActive){ triggerRandom(); scheduleRandom(); } else clearTimeout(randomTimer);
 });
-
 function scheduleRandom(){
-  let intervalSec = parseInt(randomInterval.value);
-  if(intervalSec === 0) intervalSec = Math.floor(Math.random()*10)+5;
-  randomTimer = setTimeout(()=>{
-    triggerRandom();
-    if(randomActive) scheduleRandom();
-  }, intervalSec*1000);
+  let intervalSec=parseInt(randomInterval.value);
+  if(intervalSec===0) intervalSec=Math.floor(Math.random()*10)+5;
+  randomTimer=setTimeout(()=>{ triggerRandom(); if(randomActive)scheduleRandom(); }, intervalSec*1000);
 }
-
 function triggerRandom(){
-  const total = audioElements.length;
-  const activeCount = Math.floor(Math.random()*(total)+1);
-  const indices = Array.from({length: total}, (_, i)=>i);
-  shuffle(indices);
-  const selected = indices.slice(0, activeCount);
-
+  const total=audioElements.length;
+  const activeCount=Math.floor(Math.random()*total+1);
+  const indices=Array.from({length:total},(_,i)=>i); shuffle(indices);
+  const selected=indices.slice(0,activeCount);
   audioElements.forEach((a,i)=>{
-    if(selected.includes(i)){
-      if(a.audio.paused){ a.audio.play(); a.btn.classList.add('active'); }
-    } else {
-      if(!a.audio.paused){ a.audio.pause(); a.btn.classList.remove('active'); }
-    }
+    if(selected.includes(i)){ if(a.audio.paused){ a.audio.play(); a.btn.classList.add('active'); } }
+    else { if(!a.audio.paused){ a.audio.pause(); a.btn.classList.remove('active'); } }
   });
 }
+function shuffle(array){ for(let i=array.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]]; } }
 
-// ======= Shuffle =======
-function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [array[i], array[j]] = [array[j], array[i]];
+// ===== Auto-off Timer =====
+let timerSeconds=0, timerInterval=null;
+const autoOffSelect=document.getElementById('autoOffSelect');
+const timerBtn=document.getElementById('timerBtn');
+const timerDisplay=document.getElementById('timerDisplay');
+let timerRunning=false;
+
+timerBtn.addEventListener('click', ()=>{
+  if(!timerRunning){
+    timerSeconds=parseInt(autoOffSelect.value);
+    if(timerSeconds>0){
+      startTimer();
+    }
+  } else {
+    stopTimer();
   }
+});
+
+function startTimer(){
+  timerRunning=true;
+  timerBtn.innerText='Stop Timer';
+  updateTimerDisplay();
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    timerSeconds--;
+    updateTimerDisplay();
+    if(timerSeconds<=0){ stopAllSounds(); stopTimer(); }
+  },1000);
 }
+
+function stopTimer(){
+  timerRunning=false;
+  timerBtn.innerText='Start Timer';
+  clearInterval(timerInterval);
+  timerSeconds=0;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay(){
+  const m=Math.floor(timerSeconds/60), s=timerSeconds%60;
+  timerDisplay.innerText=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function stopAllSounds(){ audioElements.forEach(a=>{ a.audio.pause(); a.btn.classList.remove('active'); }); }
 </script>
 </body>
 </html>
