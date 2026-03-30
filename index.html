@@ -13,30 +13,119 @@
     -webkit-user-select: none; user-select: none;
   }
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
-  .container { position: relative; z-index: 10; display:flex; flex-direction: column; align-items:center; padding:20px; height: 100vh; box-sizing: border-box; }
-  .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; position: relative; z-index: 1000; }
+  
+  .container { 
+    position: relative; z-index: 10; 
+    display:flex; flex-direction: column; align-items:center; 
+    padding:20px; height: 100vh; box-sizing: border-box; 
+  }
+
+  .title-bar { 
+    display:flex; align-items:center; gap:15px; margin-bottom:15px; position: relative;
+    z-index: 1000;
+  }
   h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
-  #helpBtn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
-  #langBtn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; backdrop-filter: blur(10px); transition: 0.3s; min-width: 50px; }
+  
+  #helpBtn {
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s;
+  }
+
+  #langBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 8px 16px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    backdrop-filter: blur(10px);
+    transition: 0.3s;
+    min-width: 50px;
+  }
+
+  /* КАСТОМНЫЕ СПИСКИ (ОТКРЫТИЕ ВНИЗ) */
   .custom-select-container { position: relative; }
-  .select-trigger { padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; font-weight: bold; backdrop-filter: blur(5px); font-size: 13px; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); min-width: 80px; text-align: center; }
-  .custom-dropdown { display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; min-width: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(15px); }
+  .select-trigger {
+    padding: 8px 14px; border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer;
+    font-weight: bold; backdrop-filter: blur(5px); font-size: 13px; transition: 0.2s;
+    border: 1px solid rgba(255,255,255,0.1);
+    min-width: 80px; text-align: center;
+  }
+
+  .custom-dropdown {
+    display: none; 
+    position: absolute; 
+    top: 40px; 
+    left: 50%; 
+    transform: translateX(-50%);
+    background: rgba(30, 30, 45, 0.95); 
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px; 
+    flex-direction: column; 
+    z-index: 3000; 
+    overflow: hidden;
+    min-width: 120px; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+    backdrop-filter: blur(15px);
+  }
   .custom-dropdown.open { display: flex; }
-  .custom-dropdown button { padding: 10px 15px; border: none; background: transparent; color: white; cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; width: 100%; }
+  .custom-dropdown button {
+    padding: 10px 15px; border: none; background: transparent; color: white;
+    cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    text-align: center; width: 100%;
+  }
   .custom-dropdown button:hover { background: rgba(255,255,255,0.15); }
   .custom-dropdown button:last-child { border-bottom: none; }
-  .sound-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5; }
-  .sound-button { aspect-ratio: 1 / 1; border: none; border-radius: 20px; background: rgba(255,255,255,0.15); color:white; font-weight:bold; cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+
+  .sound-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 15px; width: 100%; max-width: 600px;
+    padding: 10px; overflow-y: auto;
+    flex-grow: 1;
+    z-index: 5;
+  }
+
+  .sound-button { 
+    aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
+    background: rgba(255,255,255,0.15); color:white; font-weight:bold; 
+    cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
+    backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center;
+    border: 1px solid rgba(255,255,255,0.05);
+    position: relative; overflow: hidden;
+  }
   .sound-button.active { box-shadow: 0 0 25px rgba(255,255,255,0.1); }
-  .tile-vis { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 30px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; display: none; }
+
+  .tile-vis {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 30px; height: 4px; background: rgba(255,255,255,0.2);
+    border-radius: 2px; overflow: hidden; display: none;
+  }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; transition: width 0.05s ease-out; }
   .sound-button.active .tile-vis { display: block; }
+
   .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
-  .controls > button { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); font-size: 13px; transition: 0.2s; }
+  .controls > button { 
+    padding:8px 14px; border:none; border-radius:12px; 
+    background: rgba(255,255,255,0.2); color:white; cursor:pointer; 
+    font-weight:bold; backdrop-filter: blur(5px); font-size: 13px; transition: 0.2s;
+  }
+  
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); }
-  #helpModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-  .help-content { position: relative; background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400; padding: 30px 20px; border-radius: 24px; max-width: 85%; width: 340px; text-align: center; }
+
+  #helpModal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
+  }
+  .help-content {
+    position: relative; background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
+    padding: 30px 20px; border-radius: 24px; max-width: 85%; width: 340px; text-align: center;
+  }
   #closeHelp { position: absolute; top: 10px; right: 15px; font-size: 32px; color: #ffb400; cursor: pointer; }
+
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
 </style>
 </head>
@@ -68,6 +157,7 @@
 
   <div class="controls">
     <button id="randomBtn">Play</button>
+    
     <div class="custom-select-container">
         <div class="select-trigger" id="speedTrigger">30s</div>
         <div class="custom-dropdown" id="speedDropdown">
@@ -77,6 +167,7 @@
             <button onclick="setSpeed(300, '5m')">5m</button>
         </div>
     </div>
+
     <div class="custom-select-container">
         <div class="select-trigger" id="sleepTrigger">15m</div>
         <div class="custom-dropdown" id="sleepDropdown">
@@ -87,9 +178,11 @@
             <button onclick="setSleep(7200, '2h')">2h</button>
         </div>
     </div>
+
     <button id="timerBtn">Start timer</button>
     <span id="timerDisplay" style="color:#9b59b6; font-weight:bold;">00:00</span>
   </div>
+
   <div id="soundGrid" class="sound-grid"></div>
 </div>
 
@@ -132,17 +225,34 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", start: "Start timer", stop: "Stop timer", hPlay: "Auto-Mix", hPlayD: "Automatically mixes sounds.", hTiles: "Tiles", hTilesD: "Tap to turn sound on/off.", hTimer: "Timer", hTimerD: "Sleep timer countdown.", close: "Tap X to close" },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", start: "Запуск таймера", stop: "Остановить", hPlay: "Авто-микс", hPlayD: "Случайное смешивание звуков.", hTiles: "Плитки", hTilesD: "Нажми, чтобы включить/выключить.", hTimer: "Таймер", hTimerD: "Таймер автоматического выключения.", close: "Нажми на X, чтобы закрыть" },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Запуск таймера", stop: "Зупинити", hPlay: "Авто-мікс", hPlayD: "Випадкове змішування звуків.", hTiles: "Плитки", hTilesD: "Натисни, щоб увімкнути або вимкнути.", hTimer: "Таймер", hTimerD: "Таймер автоматичного вимкнення.", close: "Натисни X, чтобы закрыть" }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", start: "Start timer", stop: "Stop timer", hPlay: "Auto-Mix", hPlayD: "Automatically mixes sounds.", hTiles: "Tiles", hTilesD: "Tap to turn sound on/off.", hTimer: "Timer", hTimerD: "Sleep timer countdown.", close: "Tap X to close", min: "min", hour: "hour", hours: "hours" },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", start: "Запуск таймера", stop: "Остановить", hPlay: "Авто-микс", hPlayD: "Случайное смешивание звуков.", hTiles: "Плитки", hTilesD: "Нажми, чтобы включить/выключить.", hTimer: "Таймер", hTimerD: "Таймер автоматического выключения.", close: "Нажми на X, чтобы закрыть", min: "мин", hour: "час", hours: "часа" },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Запуск таймера", stop: "Зупинити", hPlay: "Авто-мікс", hPlayD: "Випадкове змішування звуків.", hTiles: "Плитки", hTilesD: "Натисни, щоб увімкнути або вимкнути.", hTimer: "Таймер", hTimerD: "Таймер автоматичного вимкнення.", close: "Натисни X, чтобы закрыть", min: "хв", hour: "година", hours: "години" }
 };
 
 let audioElements=[], particles=[], randomActive=false, randomTimeout=null, timerInterval=null, timeLeft=0;
 
-function setSpeed(val, label) { currentSpeedValue = val; document.getElementById('speedTrigger').innerText = label; document.getElementById('speedDropdown').classList.remove('open'); }
-function setSleep(val, label) { currentSleepValue = val; document.getElementById('sleepTrigger').innerText = label; document.getElementById('sleepDropdown').classList.remove('open'); }
-document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('sleepDropdown').classList.remove('open'); document.getElementById('speedDropdown').classList.toggle('open'); };
-document.getElementById('sleepTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.remove('open'); document.getElementById('sleepDropdown').classList.toggle('open'); };
+function setSpeed(val, label) {
+    currentSpeedValue = val;
+    document.getElementById('speedTrigger').innerText = label;
+    document.getElementById('speedDropdown').classList.remove('open');
+}
+function setSleep(val, label) {
+    currentSleepValue = val;
+    document.getElementById('sleepTrigger').innerText = label;
+    document.getElementById('sleepDropdown').classList.remove('open');
+}
+
+document.getElementById('speedTrigger').onclick = (e) => {
+    e.stopPropagation();
+    document.getElementById('sleepDropdown').classList.remove('open');
+    document.getElementById('speedDropdown').classList.toggle('open');
+};
+document.getElementById('sleepTrigger').onclick = (e) => {
+    e.stopPropagation();
+    document.getElementById('speedDropdown').classList.remove('open');
+    document.getElementById('sleepDropdown').classList.toggle('open');
+};
 
 const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
 function res() { starCanvas.width = innerWidth; starCanvas.height = innerHeight; }
@@ -167,60 +277,121 @@ sounds.forEach((s, idx) => {
   audioElements.push(state);
 });
 
-function getAverageVolume(array) { let values = 0; for (let i = 0; i < array.length; i++) values += array[i]; return values / array.length; }
-function fadeIn(el) { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); el.audio.play().catch(()=>{}); el.btn.classList.add('active'); el.targetVol = 0.6; if(el.gainNode) { el.gainNode.gain.cancelScheduledValues(audioCtx.currentTime); el.gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.0); } else { el.audio.volume = 0.6; } }
-function fadeOut(el) { el.btn.classList.remove('active'); el.targetVol = 0; if(el.gainNode) { el.gainNode.gain.cancelScheduledValues(audioCtx.currentTime); el.gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0); setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 3100); } else { el.audio.volume = 0; el.audio.pause(); } }
+function getAverageVolume(array) {
+    let values = 0;
+    for (let i = 0; i < array.length; i++) values += array[i];
+    return values / array.length;
+}
 
-document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; const currentLang = langOrder[langIdx]; document.getElementById('randomBtn').innerText = randomActive ? uiTL[currentLang].pause : uiTL[currentLang].play; if(randomActive) runRandom(); else audioElements.forEach(fadeOut); };
-function runRandom() { if(!randomActive) return; let count = Math.floor(Math.random()*3)+1; let shuffled = [...audioElements].sort(() => 0.5-Math.random()); audioElements.forEach(el => shuffled.slice(0, count).includes(el) ? fadeIn(el) : fadeOut(el)); randomTimeout = setTimeout(runRandom, currentSpeedValue * 1000); }
+function fadeIn(el) {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  el.audio.play().catch(()=>{});
+  el.btn.classList.add('active');
+  el.targetVol = 0.6;
+  if(el.gainNode) {
+    el.gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+    el.gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.0);
+  } else { el.audio.volume = 0.6; }
+}
 
-document.getElementById('timerBtn').onclick = () => { initAudioContext(); const currentLang = langOrder[langIdx]; if(timerInterval) { clearInterval(timerInterval); timerInterval=null; document.getElementById('timerDisplay').innerText = "00:00"; document.getElementById('timerBtn').innerText = uiTL[currentLang].start; } else { timeLeft = currentSleepValue; document.getElementById('timerBtn').innerText = uiTL[currentLang].stop; timerInterval = setInterval(() => { timeLeft--; let m = Math.floor(timeLeft/60), s = timeLeft%60; document.getElementById('timerDisplay').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; if(timeLeft<=0) { clearInterval(timerInterval); timerInterval = null; audioElements.forEach(fadeOut); randomActive=false; document.getElementById('timerBtn').innerText = uiTL[currentLang].start; } }, 1000); } };
+function fadeOut(el) {
+  el.btn.classList.remove('active');
+  el.targetVol = 0;
+  if(el.gainNode) {
+    el.gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+    el.gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
+    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 3100);
+  } else { el.audio.volume = 0; el.audio.pause(); }
+}
+
+document.getElementById('randomBtn').onclick = () => {
+  initAudioContext();
+  randomActive = !randomActive;
+  const currentLang = langOrder[langIdx];
+  document.getElementById('randomBtn').innerText = randomActive ? uiTL[currentLang].pause : uiTL[currentLang].play;
+  if(randomActive) runRandom(); else audioElements.forEach(fadeOut);
+};
+
+function runRandom() {
+  if(!randomActive) return;
+  let count = Math.floor(Math.random()*3)+1;
+  let shuffled = [...audioElements].sort(() => 0.5-Math.random());
+  audioElements.forEach(el => shuffled.slice(0, count).includes(el) ? fadeIn(el) : fadeOut(el));
+  randomTimeout = setTimeout(runRandom, currentSpeedValue * 1000);
+}
+
+document.getElementById('timerBtn').onclick = () => {
+  initAudioContext();
+  const currentLang = langOrder[langIdx];
+  if(timerInterval) { 
+    clearInterval(timerInterval); timerInterval=null; 
+    document.getElementById('timerDisplay').innerText = "00:00"; 
+    document.getElementById('timerBtn').innerText = uiTL[currentLang].start; 
+  } else {
+    timeLeft = currentSleepValue;
+    document.getElementById('timerBtn').innerText = uiTL[currentLang].stop;
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      let m = Math.floor(timeLeft/60), s = timeLeft%60;
+      document.getElementById('timerDisplay').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+      if(timeLeft<=0) { 
+          clearInterval(timerInterval); timerInterval = null;
+          audioElements.forEach(fadeOut); randomActive=false; 
+          document.getElementById('timerBtn').innerText = uiTL[currentLang].start; 
+      }
+    }, 1000);
+  }
+};
 
 const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
 visCanvas.width = innerWidth; visCanvas.height = innerHeight;
 const header = document.getElementById('mainHeader');
 
-// ФИНАЛЬНАЯ АНИМАЦИЯ С ЗАМЕДЛЕНИЕМ
 function animate(){
   visCtx.clearRect(0,0,innerWidth,innerHeight);
   let globalVol = 0;
+
   if (globalAnalyser && dataArray) {
     globalAnalyser.getByteFrequencyData(dataArray);
     globalVol = getAverageVolume(dataArray);
-    header.style.filter = `drop-shadow(0 0 ${10 + globalVol/3}px rgba(138, 43, 226, ${0.3 + globalVol/250}))`;
+    let pulsateSpread = globalVol / 3;
+    let brightness = globalVol / 250;
+    header.style.filter = `drop-shadow(0 0 ${10 + pulsateSpread}px rgba(138, 43, 226, ${0.3 + brightness}))`;
   }
 
   audioElements.forEach(el => {
     let currentTileVol = 0;
     let effectiveVol = el.gainNode ? el.gainNode.gain.value : (el.targetVol > 0 ? 0.6 : 0);
+    
     if(el.analyser && el.tileDataArray && effectiveVol > 0.01) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
         currentTileVol = getAverageVolume(el.tileDataArray);
-        el.visBar.style.width = `${Math.min(100, (currentTileVol / 150) * 100)}%`;
-        el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (currentTileVol / 255) * 0.6).toFixed(2));
+        let barWidth = (currentTileVol / 150) * 100;
+        el.visBar.style.width = `${Math.min(100, barWidth)}%`;
+        let brightness = 0.15 + (currentTileVol / 255) * 0.6;
+        el.btn.style.backgroundColor = el.color.replace('0.5', brightness.toFixed(2));
         
-        // ВЕРНУЛИ ШАНС (больше частиц)
-        let spawnChance = 0.15 + (currentTileVol / 255) * 0.7; 
+        let spawnChance = 0.05 + (currentTileVol / 255) * 0.4;
         if(Math.random() < spawnChance){
-          const types = ['circle', 'circle', 'circle', 'star', 'diamond', 'spark']; // Circle чаще для баланса
+          const types = ['circle', 'star', 'diamond', 'spark'];
           const type = types[Math.floor(Math.random() * types.length)];
-          
-          // ЗАМЕДЛЕНО В 3 РАЗА: speedY и rotSpeed поделены
           particles.push({ 
             type: type, x: Math.random()*innerWidth, y: innerHeight+10, 
-            r: ((currentTileVol / 60) + 3) * (type === 'spark' ? 0.6 : 1.8),
-            speedY: (((0.2 + Math.random()*0.8) + (currentTileVol / 100)) / 3) * (type === 'spark' ? 2.5 : 0.8),
-            speedX: ((Math.random() - 0.5) * (type === 'diamond' ? 2 : 0.5)) / 3,
+            r: ((currentTileVol / 60) + 3) * (type === 'spark' ? 0.5 : 2),
+            speedY: ((0.2 + Math.random()*0.8) + (currentTileVol / 100)) * (type === 'spark' ? 2.5 : 0.8),
+            speedX: (Math.random() - 0.5) * (type === 'diamond' ? 2 : 0.5),
             al: 0.9, c: el.color, rot: Math.random() * Math.PI * 2,
-            rotSpeed: ((Math.random() - 0.5) * 0.1) / 3, sine: Math.random() * 10
+            rotSpeed: (Math.random() - 0.5) * 0.1, sine: Math.random() * 10
           });
         }
-    } else if(!el.btn.classList.contains('active')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)';
+    } else {
+        if(!el.btn.classList.contains('active')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)';
+    }
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.y -= p.speedY; p.al -= 0.0015; p.rot += p.rotSpeed;
-    if(p.type === 'diamond') p.x += Math.sin(p.y * 0.05 + p.sine) * 0.4; else p.x += p.speedX;
+    if(p.type === 'diamond') p.x += Math.sin(p.y * 0.05 + p.sine) * 1.2; else p.x += p.speedX;
 
     visCtx.save();
     visCtx.translate(p.x, p.y);
@@ -239,23 +410,40 @@ function animate(){
 }
 animate();
 
-function cycleLang() { langIdx = (langIdx + 1) % langOrder.length; updateUI(); }
+function cycleLang() {
+  langIdx = (langIdx + 1) % langOrder.length;
+  updateUI();
+}
+
 function updateUI() {
-  const currentLang = langOrder[langIdx]; const t = uiTL[currentLang];
-  document.getElementById('title').innerText = t.title; document.getElementById('langBtn').innerText = t.code;
+  const currentLang = langOrder[langIdx];
+  const t = uiTL[currentLang];
+  document.getElementById('title').innerText = t.title;
+  document.getElementById('langBtn').innerText = t.code;
   document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
   document.getElementById('timerBtn').innerText = timerInterval ? t.stop : t.start;
-  document.getElementById('hPlay').innerText = t.hPlay; document.getElementById('hPlayD').innerText = t.hPlayD;
-  document.getElementById('hTiles').innerText = t.hTiles; document.getElementById('hTilesD').innerText = t.hTilesD;
-  document.getElementById('hTimer').innerText = t.hTimer; document.getElementById('hTimerD').innerText = t.hTimerD;
+  document.getElementById('hPlay').innerText = t.hPlay;
+  document.getElementById('hPlayD').innerText = t.hPlayD;
+  document.getElementById('hTiles').innerText = t.hTiles;
+  document.getElementById('hTilesD').innerText = t.hTilesD;
+  document.getElementById('hTimer').innerText = t.hTimer;
+  document.getElementById('hTimerD').innerText = t.hTimerD;
   document.getElementById('helpClose').innerText = t.close;
-  audioElements.forEach((el, i) => { el.btn.querySelector('span').innerText = sounds[i].name[currentLang]; });
+  audioElements.forEach((el, i) => { 
+    el.btn.querySelector('span').innerText = sounds[i].name[currentLang]; 
+  });
 }
 
 document.getElementById('helpBtn').onclick = (e) => { e.stopPropagation(); document.getElementById('helpModal').style.display='flex'; };
 document.getElementById('closeHelp').onclick = () => { document.getElementById('helpModal').style.display='none'; };
 document.getElementById('langBtn').onclick = cycleLang;
-window.onclick = (e) => { if (!e.target.matches('.select-trigger')) { document.getElementById('speedDropdown').classList.remove('open'); document.getElementById('sleepDropdown').classList.remove('open'); } };
+
+window.onclick = (e) => {
+    if (!e.target.matches('.select-trigger')) {
+        document.getElementById('speedDropdown').classList.remove('open');
+        document.getElementById('sleepDropdown').classList.remove('open');
+    }
+};
 window.onresize = () => { res(); visCanvas.width=innerWidth; visCanvas.height=innerHeight; };
 updateUI();
 </script>
