@@ -42,6 +42,7 @@
     font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
   }
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); }
+  #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
 
   .sound-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
@@ -62,6 +63,7 @@
     border-radius: 2px; overflow: hidden; display: none;
   }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
+  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.1); }
   .sound-button.active .tile-vis { display: block; }
 
   .custom-select-container { position: relative; }
@@ -88,8 +90,6 @@
     background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
     padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%;
   }
-  .help-line { margin: 10px 0; font-size: 14px; line-height: 1.4; }
-  .help-line b { color: #ffb400; display: block; margin-bottom: 2px; }
 </style>
 </head>
 <body>
@@ -101,9 +101,7 @@
 <div id="helpModal">
   <div class="help-content">
     <h2 id="modalTitle" style="color: #ffb400; margin-top: 0;">GUIDE</h2>
-    <div class="help-line"><b id="hPlay">Play</b> <span id="hPlayD">Auto-mix sounds.</span></div>
-    <div class="help-line"><b id="hTiles">Tiles</b> <span id="hTilesD">Tap to toggle sounds.</span></div>
-    <div class="help-line"><b id="hTimer">Timer</b> <span id="hTimerD">Sets sleep countdown.</span></div>
+    <p id="hRepairD">If tiles blink red or sounds hang, press REPAIR.</p>
     <button id="closeHelp" style="background:#ffb400; border:none; padding:12px 25px; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:15px; color:black;">OK</button>
   </div>
 </div>
@@ -117,6 +115,7 @@
 
   <div class="controls">
     <button id="randomBtn">Play</button>
+    <button id="repairBtn">REPAIR</button>
     <div class="custom-select-container">
         <div class="select-trigger" id="speedTrigger">10s</div>
         <div class="custom-dropdown" id="speedDropdown">
@@ -155,9 +154,9 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", start: "Start", stop: "Stop", mTitle: "GUIDE", hPlay: "Auto-Mix", hPlayD: "Automatically mixes sounds.", hTiles: "Tiles", hTilesD: "Tap to turn sound on/off.", hTimer: "Timer", hTimerD: "Sleep timer countdown." },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", start: "Пуск", stop: "Стоп", mTitle: "СПРАВКА", hPlay: "Авто-микс", hPlayD: "Случайное смешивание звуков.", hTiles: "Плитки", hTilesD: "Нажми, чтобы включить/выключить.", hTimer: "Таймер", hTimerD: "Таймер выключения." },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Пуск", stop: "Стоп", mTitle: "ДОВІДКА", hPlay: "Авто-мікс", hPlayD: "Випадкове змішування звуків.", hTiles: "Плитки", hTilesD: "Натисни, чтобы увімкнути/вимкнути.", hTimer: "Таймер", hTimerD: "Таймер вимкнення." }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", start: "Start", stop: "Stop", repair: "REPAIR" },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", start: "Пуск", stop: "Стоп", repair: "ЧИНИТЬ" },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", start: "Пуск", stop: "Стоп", repair: "ЛАГОДИТИ" }
 };
 
 function initAudioContext() {
@@ -170,13 +169,6 @@ function initAudioContext() {
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
   dataArray = new Uint8Array(globalAnalyser.frequencyBinCount);
-  
-  // Разблокировка на iOS невидимым сигналом
-  const osc = audioCtx.createOscillator();
-  osc.connect(audioCtx.destination);
-  osc.start(0); osc.stop(0);
-
-  audioElements.forEach(el => setupWebAudio(el));
 }
 
 function setupWebAudio(el) {
@@ -206,31 +198,42 @@ sounds.forEach((s) => {
   audio.preload = "auto";
   audio.setAttribute('playsinline', ''); audio.setAttribute('webkit-playsinline', '');
 
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null };
+  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null };
   btn.onclick = () => { 
     initAudioContext(); 
-    if (state.audio.error) state.audio.load(); // Попытка перезагрузки при ошибке
     if(state.targetVol === 0) fadeIn(state); else fadeOut(state); 
   };
   audioElements.push(state);
 });
 
+// УЛУЧШЕННЫЙ REPAIR
+document.getElementById('repairBtn').onclick = () => {
+    randomActive = false;
+    audioElements.forEach(el => {
+        el.targetVol = 0;
+        el.audio.pause();
+        el.btn.classList.remove('active');
+        if(el.gainNode) el.gainNode.gain.setValueAtTime(0, audioCtx ? audioCtx.currentTime : 0);
+    });
+    
+    // Если контекст завис - пробуем оживить
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    
+    updateUI();
+    alert("Audio Engine Reset");
+};
+
 function fadeIn(el) {
   if (!audioCtx) initAudioContext();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  
   el.audio.play().then(() => {
     if (!el.source) setupWebAudio(el);
     el.btn.classList.add('active');
     el.targetVol = 0.6;
-    if(el.gainNode) {
-      el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
-    }
+    if(el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
   }).catch(e => {
-    console.warn("Playback failed", e);
-    // Визуальный отклик на ошибку (мигание красным)
-    el.btn.style.boxShadow = "inset 0 0 10px rgba(255,0,0,0.5)";
+    el.btn.style.boxShadow = "inset 0 0 15px rgba(255,0,0,0.8)";
     setTimeout(() => el.btn.style.boxShadow = "none", 500);
+    el.audio.load();
   });
 }
 
@@ -239,7 +242,7 @@ function fadeOut(el) {
   el.targetVol = 0;
   if(el.gainNode && audioCtx) {
     el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
-    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
+    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 500);
   } else { el.audio.pause(); }
 }
 
@@ -247,48 +250,35 @@ const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.
 const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
 function res() { starCanvas.width = visCanvas.width = innerWidth; starCanvas.height = visCanvas.height = innerHeight; }
 res();
-
-const starsArr = Array.from({length:100}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
-const header = document.getElementById('mainHeader');
+const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
 
 function animate(){
   starCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; starCtx.beginPath(); starCtx.arc(s.x,s.y,s.r,0,Math.PI*2); starCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; starCtx.fill(); });
   visCtx.clearRect(0,0,innerWidth,innerHeight);
   
-  if (globalAnalyser && dataArray) {
-    globalAnalyser.getByteFrequencyData(dataArray);
-    let avg = 0; for(let i=0; i<dataArray.length; i++) avg += dataArray[i];
-    avg /= dataArray.length;
-    header.style.filter = `drop-shadow(0 0 ${10 + avg/4}px rgba(255, 180, 0, ${0.3 + avg/200}))`;
-  }
-
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
-        let brightness = 0.15 + (vol / 255) * 0.6;
-        el.btn.style.backgroundColor = el.color.replace('0.5', brightness.toFixed(2));
+        el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
         if(Math.random() < (0.05 + vol/255*0.4)){
-          particles.push({ 
-            x: Math.random()*innerWidth, y: innerHeight+10, 
-            r: ((vol / 50) + 5) * 2,
-            s: ((0.1 + Math.random()*0.5) / 2 + (vol / 100)) / 3, 
-            al: 0.9, c: el.color 
-          });
+          particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
         }
-    } else { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; }
+    } else { 
+        el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        el.visBar.style.width = '0%';
+    }
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.0005;
+    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
     visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    let baseColor = p.c.split(',').slice(0, 3).join(',');
-    visCtx.fillStyle = `${baseColor},${p.al.toFixed(2)})`;
+    visCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`;
     visCtx.fill();
-    if(p.al <= 0 || p.y < -50) particles.splice(i, 1);
+    if(p.al <= 0) particles.splice(i, 1);
   }
   requestAnimationFrame(animate);
 }
@@ -299,23 +289,15 @@ function setSleep(v, l) { currentSleepValue=v; document.getElementById('sleepTri
 function closeMenus() { document.querySelectorAll('.custom-dropdown').forEach(d=>d.classList.remove('open')); }
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); closeMenus(); document.getElementById('speedDropdown').classList.toggle('open'); };
 document.getElementById('sleepTrigger').onclick = (e) => { e.stopPropagation(); closeMenus(); document.getElementById('sleepDropdown').classList.toggle('open'); };
-window.onclick = closeMenus;
 
 function updateUI() {
-  const currentLang = langOrder[langIdx];
-  const t = uiTL[currentLang];
+  const t = uiTL[langOrder[langIdx]];
   document.getElementById('title').innerText = t.title;
   document.getElementById('langBtn').innerText = t.code;
   document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
   document.getElementById('timerBtn').innerText = timerInterval ? t.stop : t.start;
-  document.getElementById('modalTitle').innerText = t.mTitle;
-  document.getElementById('hPlay').innerText = t.hPlay;
-  document.getElementById('hPlayD').innerText = t.hPlayD;
-  document.getElementById('hTiles').innerText = t.hTiles;
-  document.getElementById('hTilesD').innerText = t.hTilesD;
-  document.getElementById('hTimer').innerText = t.hTimer;
-  document.getElementById('hTimerD').innerText = t.hTimerD;
-  audioElements.forEach((el, i) => { el.btn.querySelector('span').innerText = sounds[i].name[currentLang]; });
+  document.getElementById('repairBtn').innerText = t.repair;
+  audioElements.forEach((el, i) => { el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]; });
 }
 
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
@@ -336,8 +318,7 @@ document.getElementById('timerBtn').onclick = () => {
     let left = currentSleepValue;
     timerInterval = setInterval(() => {
       left--;
-      let m = Math.floor(left/60), s = left%60;
-      document.getElementById('timerDisplay').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+      document.getElementById('timerDisplay').innerText = `${Math.floor(left/60).toString().padStart(2,'0')}:${(left%60).toString().padStart(2,'0')}`;
       if(left<=0) { clearInterval(timerInterval); audioElements.forEach(fadeOut); randomActive=false; updateUI(); }
     }, 1000);
   }
