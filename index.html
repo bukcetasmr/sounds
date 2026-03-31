@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BUCKET ASMR | PRECISE LOAD & EFFECTS</title>
+<meta name="darkreader-lock">
+<meta name="color-scheme" content="dark">
+<title>BUCKET ASMR | NO TIMER EDITION</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -19,67 +21,89 @@
     padding:20px; height: 100vh; box-sizing: border-box; 
   }
 
-  .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; }
-  h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 15px #ffb400; }
+  .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
+  h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
   
+  #helpBtn {
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+  }
+
   #langBtn {
     background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4);
     padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;
   }
 
-  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; }
+  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
   .controls > button { 
-    padding:10px 18px; border:none; border-radius:12px; 
+    padding:8px 14px; border:none; border-radius:12px; 
     background: rgba(255,255,255,0.2); color:white; cursor:pointer; 
-    font-weight:bold; backdrop-filter: blur(10px); font-size: 13px; transition: 0.3s;
+    font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
   }
-  #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 90px; }
-  #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); }
+  #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 80px; }
+  #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
 
   .sound-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-    gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1;
+    gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
   }
 
   .sound-button { 
-    aspect-ratio: 1 / 1; border: none; border-radius: 22px; 
+    aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
     background: rgba(255,255,255,0.15); color:white; font-weight:bold; 
     cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
-    backdrop-filter: blur(12px); transition: background 0.4s, transform 0.2s, box-shadow 0.3s; 
-    font-size: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative;
+    backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center;
+    border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
   }
 
-  .sound-button:active { transform: scale(0.95); }
-  .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.5); }
+  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+  .sound-button.broken { border: 2px solid rgba(255, 0, 0, 0.5) !important; opacity: 0.6; }
+  .sound-button.repairing { animation: pulse-repair 1.5s infinite; }
 
-  /* СТАТУСЫ ЗАГРУЗКИ */
-  .loading-red { animation: pulse-red 1.5s infinite; border: 2px solid rgba(255, 50, 50, 0.6) !important; }
-  .loading-yellow { animation: pulse-yellow 1.2s infinite; border: 2px solid rgba(255, 255, 50, 0.6) !important; }
-  .loading-green { animation: pulse-green 1s infinite; border: 2px solid rgba(50, 255, 50, 0.6) !important; }
-
-  @keyframes pulse-red { 0%,100%{background:rgba(255,50,50,0.15)} 50%{background:rgba(255,50,50,0.35)} }
-  @keyframes pulse-yellow { 0%,100%{background:rgba(255,255,50,0.15)} 50%{background:rgba(255,255,50,0.35)} }
-  @keyframes pulse-green { 0%,100%{background:rgba(50,255,50,0.15)} 50%{background:rgba(50,255,50,0.35)} }
+  @keyframes pulse-repair {
+    0% { background: rgba(255,255,255,0.15); }
+    50% { background: rgba(255, 180, 0, 0.2); }
+    100% { background: rgba(255,255,255,0.15); }
+  }
 
   .tile-vis {
-    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-    width: 35px; height: 5px; background: rgba(255,255,255,0.2);
-    border-radius: 3px; overflow: hidden; display: none;
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 30px; height: 4px; background: rgba(255,255,255,0.2);
+    border-radius: 2px; overflow: hidden; display: none;
   }
-  .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 3px; }
+  .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
   .sound-button.active .tile-vis { display: block; }
 
   .custom-select-container { position: relative; }
-  .select-trigger { padding: 10px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.2); cursor: pointer; font-weight: bold; font-size: 13px; }
+  .select-trigger {
+    padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2);
+    color: white; cursor: pointer; font-weight: bold; font-size: 13px; min-width: 80px; text-align: center;
+  }
   .custom-dropdown {
-    display: none; position: absolute; top: 45px; left: 50%; transform: translateX(-50%);
-    background: rgba(20, 20, 35, 0.95); border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; backdrop-filter: blur(15px);
+    display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+    background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px; flex-direction: column; z-index: 3000; overflow: hidden; min-width: 120px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(15px);
   }
   .custom-dropdown.open { display: flex; }
-  .custom-dropdown button { padding: 12px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .custom-dropdown button { padding: 10px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+  
+  .modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
+  }
+  .modal-content {
+    background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
+    padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%;
+    box-shadow: 0 0 30px rgba(255, 180, 0, 0.2);
+  }
+  .modal-btn {
+    background:#ffb400; border:none; padding:12px 30px; border-radius:12px; 
+    font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px;
+  }
 </style>
 </head>
 <body>
@@ -88,9 +112,21 @@
 <canvas id="vis"></canvas>
 <div class="overlay"></div>
 
+<div id="welcomeModal" class="modal" style="display: flex;">
+  <div class="modal-content">
+    <h2 style="color: #ffb400; margin-top: 0;">Smart ASMR Player</h2>
+    <p style="line-height: 1.6; font-size: 16px;">
+      <b>Бесконечный режим:</b> Нажми Play, и система будет сама менять звуки каждые несколько секунд.<br><br>
+      <i>Наслаждайся случайными комбинациями без пауз.</i>
+    </p>
+    <button class="modal-btn" id="closeWelcome">Поехали!</button>
+  </div>
+</div>
+
 <div class="container">
-  <div class="title-bar">
+  <div class="title-bar" id="mainHeader">
     <h1 id="title">BUCKET ASMR</h1>
+    <div id="helpBtn">?</div>
     <button id="langBtn">EN</button>
   </div>
 
@@ -112,7 +148,10 @@
 
 <script>
 let audioCtx = null, globalAnalyser = null;
-let currentSpeedValue = 10, langIdx = 0, randomActive = false, nextCycleTimeout = null;
+let currentSpeedValue = 10, langIdx = 0; 
+let randomActive = false;
+let nextCycleTimeout = null;
+
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements=[], particles=[];
 
@@ -130,11 +169,79 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
 };
 
-const grid = document.getElementById('soundGrid');
+// --- СИСТЕМА УМНОГО РЕМОНТА ---
+function isSoundReady(el) {
+    return el.audio.readyState >= 2 && !el.btn.classList.contains('broken') && !el.btn.classList.contains('repairing');
+}
 
+function autoRepair(state, soundFile) {
+    state.btn.classList.add('repairing');
+    state.btn.classList.remove('broken');
+    state.audio.src = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${soundFile}`;
+    state.audio.load();
+    state.audio.addEventListener('canplaythrough', () => {
+        state.btn.classList.remove('repairing', 'broken');
+    }, { once: true });
+}
+
+// --- ГЛАВНАЯ ЛОГИКА ГЕНЕРАЦИИ (БЕСКОНЕЧНАЯ) ---
+function runRandom() { 
+  if(!randomActive) return; 
+
+  // Выбираем только готовые звуки
+  let readySounds = audioElements.filter(el => isSoundReady(el));
+  
+  if (readySounds.length === 0) {
+      nextCycleTimeout = setTimeout(runRandom, 2000);
+      return;
+  }
+
+  // Решаем, сколько звуков включить (от 1 до 3)
+  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); 
+  let shuffled = readySounds.sort(() => 0.5 - Math.random()); 
+  let toPlay = shuffled.slice(0, count);
+
+  // Плавное переключение: выключаем все, включаем новые
+  audioElements.forEach(el => {
+      if (toPlay.includes(el)) fadeIn(el);
+      else fadeOut(el);
+  });
+
+  // Зацикливаем до бесконечности
+  nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
+}
+
+// --- ЯДРО АУДИО ---
+function initAudioContext() {
+  if (audioCtx && audioCtx.state !== 'closed') {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  globalAnalyser = audioCtx.createAnalyser();
+  globalAnalyser.fftSize = 64;
+  globalAnalyser.connect(audioCtx.destination);
+}
+
+function setupWebAudio(el) {
+  if (!audioCtx || el.source) return;
+  try {
+    el.source = audioCtx.createMediaElementSource(el.audio);
+    el.gainNode = audioCtx.createGain();
+    el.analyser = audioCtx.createAnalyser();
+    el.analyser.fftSize = 32;
+    el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
+    el.source.connect(el.gainNode);
+    el.gainNode.connect(el.analyser);
+    el.analyser.connect(globalAnalyser);
+    el.gainNode.gain.value = 0;
+  } catch (e) { console.error("Web Audio bind error", e); }
+}
+
+const grid = document.getElementById('soundGrid');
 sounds.forEach((s) => {
   const btn = document.createElement('button');
-  btn.className = 'sound-button loading-red'; 
+  btn.className = 'sound-button';
   btn.innerHTML = `<span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
 
@@ -142,147 +249,117 @@ sounds.forEach((s) => {
   audio.src = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${s.file}`;
   audio.loop = true; audio.crossOrigin = "anonymous";
   audio.preload = "auto";
+  audio.setAttribute('playsinline', '');
 
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isFullyLoaded: false, tileDataArray: null };
+  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, gainNode: null, analyser: null };
 
-  // ЖЁСТКИЙ МОНИТОРИНГ ЗАГРУЗКИ (чтобы не зависало на красном)
-  const checkLoad = setInterval(() => {
-      // Если пошла хоть какая-то загрузка
-      if (audio.readyState >= 1 && audio.readyState < 3 && btn.classList.contains('loading-red')) {
-          btn.classList.replace('loading-red', 'loading-yellow');
-      }
-      // Если файл готов играть (readyState 3 или 4)
-      if (audio.readyState >= 3 && !state.isFullyLoaded) {
-          state.isFullyLoaded = true;
-          btn.classList.remove('loading-red', 'loading-yellow');
-          btn.classList.add('loading-green');
-          // Через 5 секунд убираем зелёную рамку — всё готово
-          setTimeout(() => { btn.classList.remove('loading-green'); clearInterval(checkLoad); }, 5000);
-      }
-  }, 1000);
+  audio.onerror = () => autoRepair(state, s.file);
 
   btn.onclick = () => { 
     initAudioContext(); 
-    state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
+    if(state.targetVol === 0) fadeIn(state); else fadeOut(state); 
   };
   audioElements.push(state);
 });
 
-function initAudioContext() {
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  globalAnalyser = audioCtx.createAnalyser();
-  globalAnalyser.fftSize = 64;
-  globalAnalyser.connect(audioCtx.destination);
-}
-
 function fadeIn(el) {
   if (!audioCtx) initAudioContext();
   el.audio.play().then(() => {
-    if (!el.source) {
-      el.source = audioCtx.createMediaElementSource(el.audio);
-      el.gainNode = audioCtx.createGain();
-      el.analyser = audioCtx.createAnalyser();
-      el.analyser.fftSize = 32;
-      el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
-      el.source.connect(el.gainNode);
-      el.gainNode.connect(el.analyser);
-      el.analyser.connect(globalAnalyser);
-    }
+    if (!el.source) setupWebAudio(el);
     el.btn.classList.add('active');
     el.targetVol = 0.6;
-    el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.4);
+    if(el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.4);
   }).catch(() => {});
 }
 
 function fadeOut(el) {
   el.btn.classList.remove('active');
   el.targetVol = 0;
-  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 1);
-  setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1500);
+  if(el.gainNode && audioCtx) {
+    el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.8);
+    setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
+  } else { el.audio.pause(); }
 }
 
-// ЭФФЕКТЫ ЧАСТИЦ (ИЗ ТВОЕГО ПРИМЕРА)
-const sCan = document.getElementById('stars'); const sCtx = sCan.getContext('2d');
-const vCan = document.getElementById('vis'); const vCtx = vCan.getContext('2d');
-function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
-window.onresize = res; res();
-
+// --- ВИЗУАЛИЗАЦИЯ И ЗВЕЗДЫ ---
+const starCanvas = document.getElementById('stars'); const starCtx = starCanvas.getContext('2d');
+const visCanvas = document.getElementById('vis'); const visCtx = visCanvas.getContext('2d');
+function res() { starCanvas.width = visCanvas.width = innerWidth; starCanvas.height = visCanvas.height = innerHeight; }
+res();
 const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
 
 function animate(){
-  sCtx.clearRect(0,0,innerWidth,innerHeight);
-  starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
-  
-  vCtx.clearRect(0,0,innerWidth,innerHeight);
+  starCtx.clearRect(0,0,innerWidth,innerHeight);
+  starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; starCtx.beginPath(); starCtx.arc(s.x,s.y,s.r,0,Math.PI*2); starCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; starCtx.fill(); });
+  visCtx.clearRect(0,0,innerWidth,innerHeight);
   
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
-        
-        // Визуализация на кнопке
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
-        // Свечение кнопки
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        
-        // ЭФФЕКТ ЧАСТИЦ (от громкости)
         if(Math.random() < (0.05 + vol/255*0.4)){
-          particles.push({ 
-            x: Math.random()*innerWidth, 
-            y: innerHeight+10, 
-            r: ((vol/50)+5)*2, 
-            s: (0.5 + (vol/100))/3, 
-            al: 0.9, 
-            c: el.color 
-          });
+          particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
         }
     } else { 
-        if(!el.btn.className.includes('loading')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        if(!el.btn.classList.contains('repairing')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
         el.visBar.style.width = '0%';
     }
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.y -= p.s; p.al -= 0.001;
-    vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    // Берем цвет и подставляем актуальную альфу
-    let cBase = p.c.split(',').slice(0,3).join(',');
-    vCtx.fillStyle = `${cBase},${p.al})`;
-    vCtx.fill();
+    visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    visCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`;
+    visCtx.fill();
     if(p.al <= 0) particles.splice(i, 1);
   }
   requestAnimationFrame(animate);
 }
 animate();
 
-// RANDOM & UI
-function runRandom() { 
-  if(!randomActive) return; 
-  let readySounds = audioElements.filter(el => el.audio.readyState >= 3);
-  if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 2000); return; }
-  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); 
-  let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-  audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
-  nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
+// --- УПРАВЛЕНИЕ ---
+function setSpeed(v, l) { 
+    currentSpeedValue=v; 
+    document.getElementById('speedTrigger').innerText=l; 
+    closeMenus(); 
+    if(randomActive) {
+        clearTimeout(nextCycleTimeout);
+        runRandom();
+    }
+}
+function closeMenus() { document.querySelectorAll('.custom-dropdown').forEach(d=>d.classList.remove('open')); }
+document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); closeMenus(); document.getElementById('speedDropdown').classList.toggle('open'); };
+
+function updateUI() {
+  const t = uiTL[langOrder[langIdx]];
+  document.getElementById('title').innerText = t.title;
+  document.getElementById('langBtn').innerText = t.code;
+  document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
+  document.getElementById('repairBtn').innerText = t.repair;
+  audioElements.forEach((el, i) => { el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]; });
 }
 
-function setSpeed(v, l) { currentSpeedValue=v; document.getElementById('speedTrigger').innerText=l; document.getElementById('speedDropdown').classList.remove('open'); if(randomActive){clearTimeout(nextCycleTimeout); runRandom();} }
-document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
-document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % 3; updateUI(); };
-document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
-document.getElementById('repairBtn').onclick = () => location.reload();
+document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
 
-function updateUI(){
-  const t=uiTL[langOrder[langIdx]];
-  document.getElementById('title').innerText=t.title;
-  document.getElementById('langBtn').innerText=t.code;
-  document.getElementById('randomBtn').innerText=randomActive?t.pause:t.play;
-  document.getElementById('repairBtn').innerText=t.repair;
-  audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
-}
-window.onclick=()=>document.getElementById('speedDropdown').classList.remove('open');
+document.getElementById('randomBtn').onclick = () => { 
+    initAudioContext(); 
+    randomActive = !randomActive; 
+    if(randomActive) {
+        runRandom();
+    } else {
+        clearTimeout(nextCycleTimeout);
+        audioElements.forEach(fadeOut);
+    }
+    updateUI(); 
+};
+
+document.getElementById('repairBtn').onclick = () => { location.reload(); };
+document.getElementById('helpBtn').onclick = () => alert("Infinite Mode: System changes sound combinations automatically until you stop it.");
+document.getElementById('closeWelcome').onclick = () => document.getElementById('welcomeModal').style.display='none';
+window.onresize = res;
 updateUI();
 </script>
 </body>
