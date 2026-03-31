@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BUCKET ASMR | PRECISE LOAD & EFFECTS</title>
+<title>BUCKET ASMR | SMART QUEUE</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -43,30 +43,30 @@
 
   .sound-button { 
     aspect-ratio: 1 / 1; border: none; border-radius: 22px; 
-    background: rgba(255,255,255,0.15); color:white; font-weight:bold; 
+    background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.4); font-weight:bold; 
     cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
-    backdrop-filter: blur(12px); transition: background 0.4s, transform 0.2s, box-shadow 0.3s; 
-    font-size: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative;
+    backdrop-filter: blur(12px); transition: 0.4s; 
+    font-size: 11px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative;
   }
 
-  .sound-button:active { transform: scale(0.95); }
-  .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.5); }
+  .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.5); color: white; }
 
-  /* СТАТУСЫ ЗАГРУЗКИ */
-  .loading-red { animation: pulse-red 1.5s infinite; border: 2px solid rgba(255, 50, 50, 0.6) !important; }
-  .loading-yellow { animation: pulse-yellow 1.2s infinite; border: 2px solid rgba(255, 255, 50, 0.6) !important; }
-  .loading-green { animation: pulse-green 1s infinite; border: 2px solid rgba(50, 255, 50, 0.6) !important; }
+  /* СТАТУСЫ ОЧЕРЕДИ И ЗАГРУЗКИ */
+  .status-wait { color: rgba(255,255,255,0.2); } /* Ожидание очереди */
+  .loading-red { animation: pulse-red 1.5s infinite; border: 2px solid rgba(255, 50, 50, 0.6) !important; color: white; }
+  .loading-yellow { animation: pulse-yellow 1.2s infinite; border: 2px solid rgba(255, 255, 50, 0.6) !important; color: white; }
+  .loading-green { animation: pulse-green 1s infinite; border: 2px solid rgba(50, 255, 50, 0.6) !important; color: white; }
 
-  @keyframes pulse-red { 0%,100%{background:rgba(255,50,50,0.15)} 50%{background:rgba(255,50,50,0.35)} }
-  @keyframes pulse-yellow { 0%,100%{background:rgba(255,255,50,0.15)} 50%{background:rgba(255,255,50,0.35)} }
-  @keyframes pulse-green { 0%,100%{background:rgba(50,255,50,0.15)} 50%{background:rgba(50,255,50,0.35)} }
+  @keyframes pulse-red { 0%,100%{background:rgba(255,50,50,0.1)} 50%{background:rgba(255,50,50,0.25)} }
+  @keyframes pulse-yellow { 0%,100%{background:rgba(255,255,50,0.1)} 50%{background:rgba(255,255,50,0.25)} }
+  @keyframes pulse-green { 0%,100%{background:rgba(50,255,50,0.1)} 50%{background:rgba(50,255,50,0.25)} }
 
   .tile-vis {
     position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
     width: 35px; height: 5px; background: rgba(255,255,255,0.2);
     border-radius: 3px; overflow: hidden; display: none;
   }
-  .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 3px; }
+  .tile-vis-bar { height: 100%; width: 0%; background: #fff; }
   .sound-button.active .tile-vis { display: block; }
 
   .custom-select-container { position: relative; }
@@ -132,42 +132,88 @@ const uiTL = {
 
 const grid = document.getElementById('soundGrid');
 
-sounds.forEach((s) => {
+// Инициализация сетки (но без загрузки аудио сразу)
+sounds.forEach((s, idx) => {
   const btn = document.createElement('button');
-  btn.className = 'sound-button loading-red'; 
+  btn.className = 'sound-button status-wait'; 
   btn.innerHTML = `<span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
 
-  const audio = new Audio();
-  audio.src = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${s.file}`;
-  audio.loop = true; audio.crossOrigin = "anonymous";
-  audio.preload = "auto";
-
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isFullyLoaded: false, tileDataArray: null };
-
-  // ЖЁСТКИЙ МОНИТОРИНГ ЗАГРУЗКИ (чтобы не зависало на красном)
-  const checkLoad = setInterval(() => {
-      // Если пошла хоть какая-то загрузка
-      if (audio.readyState >= 1 && audio.readyState < 3 && btn.classList.contains('loading-red')) {
-          btn.classList.replace('loading-red', 'loading-yellow');
-      }
-      // Если файл готов играть (readyState 3 или 4)
-      if (audio.readyState >= 3 && !state.isFullyLoaded) {
-          state.isFullyLoaded = true;
-          btn.classList.remove('loading-red', 'loading-yellow');
-          btn.classList.add('loading-green');
-          // Через 5 секунд убираем зелёную рамку — всё готово
-          setTimeout(() => { btn.classList.remove('loading-green'); clearInterval(checkLoad); }, 5000);
-      }
-  }, 1000);
+  const state = { 
+    id: idx,
+    file: s.file,
+    audio: null, // Создадим позже
+    btn, 
+    color: s.color, 
+    visBar: btn.querySelector('.tile-vis-bar'), 
+    targetVol: 0, 
+    source: null, 
+    isFullyLoaded: false, 
+    isLoadingNow: false,
+    tileDataArray: null 
+  };
 
   btn.onclick = () => { 
     initAudioContext(); 
-    state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
+    if(!state.isFullyLoaded && !state.isLoadingNow) {
+        startLoading(state); // Принудительный старт при клике
+    } else if(state.isFullyLoaded) {
+        state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
+    }
   };
   audioElements.push(state);
 });
 
+// --- СИСТЕМА ПОСЛЕДОВАТЕЛЬНОЙ ЗАГРУЗКИ ---
+let currentLoadingIndex = 0;
+
+function processQueue() {
+    if (currentLoadingIndex >= audioElements.length) return;
+    const nextToLoad = audioElements[currentLoadingIndex];
+    if (!nextToLoad.isFullyLoaded && !nextToLoad.isLoadingNow) {
+        startLoading(nextToLoad).then(() => {
+            currentLoadingIndex++;
+            processQueue();
+        });
+    } else {
+        currentLoadingIndex++;
+        processQueue();
+    }
+}
+
+function startLoading(state) {
+    return new Promise((resolve) => {
+        state.isLoadingNow = true;
+        state.btn.classList.remove('status-wait');
+        state.btn.classList.add('loading-red');
+        
+        const audio = new Audio();
+        audio.src = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.file}`;
+        audio.loop = true; audio.crossOrigin = "anonymous";
+        audio.preload = "auto";
+        state.audio = audio;
+
+        const checkInterval = setInterval(() => {
+            if (audio.readyState >= 1 && audio.readyState < 3 && state.btn.classList.contains('loading-red')) {
+                state.btn.classList.replace('loading-red', 'loading-yellow');
+            }
+            if (audio.readyState >= 3) {
+                state.isFullyLoaded = true;
+                state.isLoadingNow = false;
+                state.btn.classList.remove('loading-red', 'loading-yellow');
+                state.btn.classList.add('loading-green');
+                clearInterval(checkInterval);
+                setTimeout(() => state.btn.classList.remove('loading-green'), 3000);
+                resolve(); // Разрешаем загрузку следующего
+            }
+        }, 800);
+    });
+}
+
+// Запускаем очередь
+processQueue();
+
+// --- АУДИО ЛОГИКА ---
 function initAudioContext() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -196,13 +242,14 @@ function fadeIn(el) {
 }
 
 function fadeOut(el) {
+  if (!el.audio) return;
   el.btn.classList.remove('active');
   el.targetVol = 0;
   if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 1);
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1500);
 }
 
-// ЭФФЕКТЫ ЧАСТИЦ (ИЗ ТВОЕГО ПРИМЕРА)
+// --- ВИЗУАЛИЗАЦИЯ ---
 const sCan = document.getElementById('stars'); const sCtx = sCan.getContext('2d');
 const vCan = document.getElementById('vis'); const vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
@@ -213,7 +260,6 @@ const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:
 function animate(){
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
-  
   vCtx.clearRect(0,0,innerWidth,innerHeight);
   
   audioElements.forEach(el => {
@@ -221,33 +267,20 @@ function animate(){
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
-        
-        // Визуализация на кнопке
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
-        // Свечение кнопки
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        
-        // ЭФФЕКТ ЧАСТИЦ (от громкости)
         if(Math.random() < (0.05 + vol/255*0.4)){
-          particles.push({ 
-            x: Math.random()*innerWidth, 
-            y: innerHeight+10, 
-            r: ((vol/50)+5)*2, 
-            s: (0.5 + (vol/100))/3, 
-            al: 0.9, 
-            c: el.color 
-          });
+          particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
         }
     } else { 
-        if(!el.btn.className.includes('loading')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        if(el.isFullyLoaded) el.btn.style.backgroundColor = 'rgba(255,255,255,0.1)';
         el.visBar.style.width = '0%';
     }
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
+    const p = particles[i]; p.y -= p.s; p.al -= 0.002;
     vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    // Берем цвет и подставляем актуальную альфу
     let cBase = p.c.split(',').slice(0,3).join(',');
     vCtx.fillStyle = `${cBase},${p.al})`;
     vCtx.fill();
@@ -257,14 +290,14 @@ function animate(){
 }
 animate();
 
-// RANDOM & UI
+// --- UI ---
 function runRandom() { 
   if(!randomActive) return; 
-  let readySounds = audioElements.filter(el => el.audio.readyState >= 3);
+  let readySounds = audioElements.filter(el => el.isFullyLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 2000); return; }
   let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); 
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-  audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
+  audioElements.forEach(el => { if(el.isFullyLoaded) toPlay.includes(el) ? fadeIn(el) : fadeOut(el); });
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
