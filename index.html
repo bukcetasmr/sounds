@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR | STABLE EDITION</title>
+<title>BUCKET ASMR</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -116,16 +116,13 @@
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
     <h2 style="color: #ffb400; margin-top: 0;">BUCKET ASMR</h2>
-    <p style="line-height: 1.6; font-size: 15px;">
-      Звуки загружаются последовательно для стабильной работы.<br><br>
-      Если кнопка <b>красная</b> или долго <b>мигает</b> — нажми на неё для повторной загрузки.
-    </p>
-    <button class="modal-btn" id="closeWelcome">Начать</button>
+    <p id="welcomeText">Нажмите "Let's Go" для активации звуков.</p>
+    <button class="modal-btn" id="closeWelcome">Let's Go</button>
   </div>
 </div>
 
 <div class="container">
-  <div class="title-bar" id="mainHeader">
+  <div class="title-bar">
     <h1 id="title">BUCKET ASMR</h1>
     <div id="helpBtn">?</div>
     <button id="langBtn">EN</button>
@@ -153,12 +150,11 @@ let currentSpeedValue = 10, langIdx = 0, randomActive = false, nextCycleTimeout 
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
-// Имена файлов проверены по твоему списку
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
   {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
   {file:'carrot.mp3', name:{en:'Carrot', ru:'Морковь', uk:'Морква'}, color:'rgba(255,140,0,0.5)'},
-  {file:'oldphone.mp3', name:{en:'Old Phone', ru:'Старый телефон', uk:'Старий телефон'}, color:'rgba(50,50,50,0.5)'},
+  {file:'oldphone.mp3', name:{en:'Old Phone', ru:'Телефон', uk:'Телефон'}, color:'rgba(50,50,50,0.5)'},
   {file:'greybrush.mp3', name:{en:'Grey Brush', ru:'Серая кисть', uk:'Сірий пензель'}, color:'rgba(140,140,140,0.5)'},
   {file:'pinksoftbrush.mp3', name:{en:'Soft Brush', ru:'Мягкая кисть', uk:'М’який пензель'}, color:'rgba(255,182,193,0.5)'},
   {file:'strawberry.mp3', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
@@ -167,47 +163,60 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR" },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ" },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press Let's go and Play to activate sounds."  },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите Начать для активации звуков." },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть Почати для активації звуків." }
 };
 
-async function smartLoad(state, file) {
+// Функция умной загрузки с авто-повтором
+async function smartLoad(state) {
     if (state.isLoaded) return;
+    
     state.btn.classList.add('loading');
     state.btn.classList.remove('broken', 'ready');
-    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${Date.now()}`;
+    
+    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random().toString(36).substring(7)}`;
     
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error();
-        const blob = await response.blob();
-        const objectURL = URL.createObjectURL(blob);
-        
-        state.audio.src = objectURL;
+        state.audio.src = url;
         state.audio.load();
         
-        return new Promise((resolve) => {
+        const success = await new Promise((resolve) => {
             state.audio.oncanplaythrough = () => {
                 state.btn.classList.remove('loading', 'broken');
                 state.btn.classList.add('ready');
                 state.isLoaded = true;
                 resolve(true);
             };
-            setTimeout(() => resolve(false), 15000);
+            state.audio.onerror = () => resolve(false);
+            setTimeout(() => resolve(false), 12000); // Тайм-аут 12 секунд
         });
+
+        if (!success) {
+            handleLoadError(state);
+        }
     } catch (e) {
-        state.btn.classList.remove('loading');
-        state.btn.classList.add('broken');
-        return false;
+        handleLoadError(state);
     }
 }
 
-async function startQueue() {
-    for (let state of audioElements) {
-        await smartLoad(state, state.fileName);
-        await new Promise(r => setTimeout(r, 200)); 
-    }
+// Логика авто-ремонта через 5 секунд
+function handleLoadError(state) {
+    state.isLoaded = false;
+    state.btn.classList.remove('loading');
+    state.btn.classList.add('broken');
+    
+    console.log(`Ошибка загрузки ${state.fileName}. Повтор через 5 секунд...`);
+    
+    // Удаляем предыдущие таймеры, если они были, чтобы не плодить попытки
+    if (state.retryTimer) clearTimeout(state.retryTimer);
+    
+    state.retryTimer = setTimeout(() => {
+        // Проверяем, не загрузился ли звук за это время (например, юзер сам нажал)
+        if (!state.isLoaded) {
+            smartLoad(state);
+        }
+    }, 5000);
 }
 
 function initAudioContext() {
@@ -229,17 +238,16 @@ sounds.forEach((s) => {
   audio.loop = true; audio.crossOrigin = "anonymous";
   audio.setAttribute('playsinline', '');
 
-  const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false };
+  const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false, retryTimer: null };
 
   btn.onclick = () => { 
     initAudioContext(); 
-    if(!state.isLoaded) { smartLoad(state, state.fileName); return; }
+    if (state.retryTimer) clearTimeout(state.retryTimer); // Если юзер нажал сам, отменяем авто-повтор
+    if(!state.isLoaded) { smartLoad(state); return; }
     state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
   };
   audioElements.push(state);
 });
-
-startQueue();
 
 function fadeIn(el) {
   if (!audioCtx) initAudioContext();
@@ -267,8 +275,9 @@ function fadeOut(el) {
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
-const sCan = document.getElementById('stars'); const sCtx = sCan.getContext('2d');
-const vCan = document.getElementById('vis'); const vCtx = vCan.getContext('2d');
+// Визуализация
+const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
+const vCan = document.getElementById('vis'), vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
 window.onresize = res; res();
 
@@ -321,7 +330,11 @@ document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); 
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % 3; updateUI(); };
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
-document.getElementById('closeWelcome').onclick = () => { initAudioContext(); document.getElementById('welcomeModal').style.display='none'; };
+document.getElementById('closeWelcome').onclick = () => { 
+  initAudioContext(); 
+  document.getElementById('welcomeModal').style.display='none'; 
+  audioElements.forEach(state => smartLoad(state));
+};
 
 function updateUI(){
   const t=uiTL[langOrder[langIdx]];
@@ -329,6 +342,7 @@ function updateUI(){
   document.getElementById('langBtn').innerText=t.code;
   document.getElementById('randomBtn').innerText=randomActive?t.pause:t.play;
   document.getElementById('repairBtn').innerText=t.repair;
+  document.getElementById('welcomeText').innerText=t.welcome;
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
 }
 window.onclick=()=>document.getElementById('speedDropdown').classList.remove('open');
