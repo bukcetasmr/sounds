@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR | IOS FAST LOAD</title>
+<title>BUCKET ASMR | STABLE EDITION</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -51,16 +51,17 @@
 
   .sound-button { 
     aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
-    background: rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); font-weight:bold; 
+    background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.2); font-weight:bold; 
     cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
     backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center;
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
   }
 
-  .sound-button.ready { color: white; background: rgba(255,255,255,0.15); }
-  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.3); color: white; }
+  /* Статусы кнопок */
   .sound-button.loading { animation: pulse-load 1.2s infinite; color: #ffb400; }
-  .sound-button.broken { border: 2px solid rgba(255, 50, 50, 0.5) !important; color: #ff5050; }
+  .sound-button.ready { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
+  .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.2); color: white; }
+  .sound-button.broken { border: 2px solid rgba(255, 50, 50, 0.6) !important; color: #ff5050; }
 
   @keyframes pulse-load {
     0%, 100% { background: rgba(255, 180, 0, 0.05); }
@@ -114,12 +115,12 @@
 
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
-    <h2 style="color: #ffb400; margin-top: 0;">Smart ASMR Player</h2>
-    <p style="line-height: 1.6; font-size: 16px;">
-      Звуки загружаются в память устройства для мгновенного отклика.<br><br>
-      <i>Нажми Play для бесконечного режима.</i>
+    <h2 style="color: #ffb400; margin-top: 0;">BUCKET ASMR</h2>
+    <p style="line-height: 1.6; font-size: 15px;">
+      Звуки загружаются последовательно для стабильной работы.<br><br>
+      Если кнопка <b>красная</b> или долго <b>мигает</b> — нажми на неё для повторной загрузки.
     </p>
-    <button class="modal-btn" id="closeWelcome">Поехали!</button>
+    <button class="modal-btn" id="closeWelcome">Начать</button>
   </div>
 </div>
 
@@ -150,7 +151,7 @@
 let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 10, langIdx = 0, randomActive = false, nextCycleTimeout = null;
 const langOrder = ['en', 'uk', 'ru'];
-let audioElements=[], particles=[];
+let audioElements = [], particles = [];
 
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
@@ -166,14 +167,18 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
 };
 
-// --- СИСТЕМА БЫСТРОЙ ЗАГРУЗКИ (FETCH + BLOB) ---
+// --- УЛУЧШЕННАЯ ЗАГРУЗКА ---
 async function smartLoad(state, file) {
+    if (state.isLoaded) return;
     state.btn.classList.add('loading');
+    state.btn.classList.remove('broken', 'ready');
+    
+    // Cache buster + уникальный ID попытки
     const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${Date.now()}`;
     
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Network error');
+        if (!response.ok) throw new Error();
         const blob = await response.blob();
         const objectURL = URL.createObjectURL(blob);
         
@@ -185,13 +190,23 @@ async function smartLoad(state, file) {
                 state.btn.classList.remove('loading', 'broken');
                 state.btn.classList.add('ready');
                 state.isLoaded = true;
-                resolve();
+                resolve(true);
             };
+            // Тайм-аут ожидания медиа-движка
+            setTimeout(() => resolve(false), 10000);
         });
     } catch (e) {
         state.btn.classList.remove('loading');
         state.btn.classList.add('broken');
-        console.error("Load failed for " + file, e);
+        return false;
+    }
+}
+
+async function startQueue() {
+    for (let state of audioElements) {
+        await smartLoad(state, state.fileName);
+        // Небольшая пауза между запросами для Safari
+        await new Promise(r => setTimeout(r, 100)); 
     }
 }
 
@@ -214,18 +229,17 @@ sounds.forEach((s) => {
   audio.loop = true; audio.crossOrigin = "anonymous";
   audio.setAttribute('playsinline', '');
 
-  const state = { audio, btn, color: s.color, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false };
+  const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false };
 
   btn.onclick = () => { 
     initAudioContext(); 
-    if(!state.isLoaded) { smartLoad(state, s.file); return; }
+    if(!state.isLoaded) { smartLoad(state, state.fileName); return; }
     state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
   };
-  
   audioElements.push(state);
-  // Начинаем загрузку сразу
-  smartLoad(state, s.file);
 });
+
+startQueue();
 
 function fadeIn(el) {
   if (!audioCtx) initAudioContext();
@@ -243,7 +257,7 @@ function fadeIn(el) {
     el.btn.classList.add('active');
     el.targetVol = 0.6;
     el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.4);
-  }).catch(e => console.log("Playback blocked", e));
+  }).catch(() => {});
 }
 
 function fadeOut(el) {
@@ -253,7 +267,7 @@ function fadeOut(el) {
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
-// --- ВИЗУАЛИЗАЦИЯ ---
+// --- ВИЗУАЛ ---
 const sCan = document.getElementById('stars'); const sCtx = sCan.getContext('2d');
 const vCan = document.getElementById('vis'); const vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
@@ -293,7 +307,7 @@ function animate(){
 }
 animate();
 
-// --- УПРАВЛЕНИЕ ---
+// --- LOGIC ---
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
@@ -310,7 +324,6 @@ document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % 3
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
 document.getElementById('closeWelcome').onclick = () => { initAudioContext(); document.getElementById('welcomeModal').style.display='none'; };
-
 function updateUI(){
   const t=uiTL[langOrder[langIdx]];
   document.getElementById('title').innerText=t.title;
