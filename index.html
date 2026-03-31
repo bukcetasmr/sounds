@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR | AUTO-STABLE</title>
+<title>BUCKET ASMR | STABLE EDITION</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -105,7 +105,6 @@
     background:#ffb400; border:none; padding:12px 30px; border-radius:12px; 
     font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px;
   }
-  .repair-hint { font-size: 13px; color: #ffaaaa; margin-top: 15px; font-style: italic; display: block; }
 </style>
 </head>
 <body>
@@ -117,14 +116,16 @@
 <div id="welcomeModal" class="modal" style="display: flex;">
   <div class="modal-content">
     <h2 style="color: #ffb400; margin-top: 0;">BUCKET ASMR</h2>
-    <p id="welcomeText">Нажмите Начать для активации звуков.</p>
-    <span id="repairHintText" class="repair-hint">Нажмите ЧИНИТЬ, если звуки не загрузились.</span>
-    <button class="modal-btn" id="closeWelcome">Let's Go</button>
+    <p style="line-height: 1.6; font-size: 15px;">
+      Звуки загружаются последовательно для стабильной работы.<br><br>
+      Если кнопка <b>красная</b> или долго <b>мигает</b> — нажми на неё для повторной загрузки.
+    </p>
+    <button class="modal-btn" id="closeWelcome">Начать</button>
   </div>
 </div>
 
 <div class="container">
-  <div class="title-bar">
+  <div class="title-bar" id="mainHeader">
     <h1 id="title">BUCKET ASMR</h1>
     <div id="helpBtn">?</div>
     <button id="langBtn">EN</button>
@@ -134,11 +135,11 @@
     <button id="randomBtn">Play</button>
     <button id="repairBtn">REPAIR</button>
     <div class="custom-select-container">
-        <div class="select-trigger" id="speedTrigger">Fast</div>
+        <div class="select-trigger" id="speedTrigger">10s</div>
         <div class="custom-dropdown" id="speedDropdown">
-            <button id="optFast" onclick="setSpeed(10, 'fast')">Fast</button>
-            <button id="optMed" onclick="setSpeed(30, 'medium')">Medium</button>
-            <button id="optSlow" onclick="setSpeed(60, 'slow')">Slow</button>
+            <button onclick="setSpeed(10, '10s')">10s</button>
+            <button onclick="setSpeed(30, '30s')">30s</button>
+            <button onclick="setSpeed(60, '1m')">1m</button>
         </div>
     </div>
   </div>
@@ -152,12 +153,12 @@ let currentSpeedValue = 10, langIdx = 0, randomActive = false, nextCycleTimeout 
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
-// Сюда вписывай свои новые файлы
+// Имена файлов проверены по твоему списку
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
   {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
   {file:'carrot.mp3', name:{en:'Carrot', ru:'Морковь', uk:'Морква'}, color:'rgba(255,140,0,0.5)'},
-  {file:'oldphone.mp3', name:{en:'Old Phone', ru:'Телефон', uk:'Телефон'}, color:'rgba(50,50,50,0.5)'},
+  {file:'oldphone.mp3', name:{en:'Old Phone', ru:'Старый телефон', uk:'Старий телефон'}, color:'rgba(50,50,50,0.5)'},
   {file:'greybrush.mp3', name:{en:'Grey Brush', ru:'Серая кисть', uk:'Сірий пензель'}, color:'rgba(140,140,140,0.5)'},
   {file:'pinksoftbrush.mp3', name:{en:'Soft Brush', ru:'Мягкая кисть', uk:'М’який пензель'}, color:'rgba(255,182,193,0.5)'},
   {file:'strawberry.mp3', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
@@ -166,57 +167,47 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { 
-    code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", go: "Let's Go",
-    welcome: "Press Let's go and Play to activate sounds.", 
-    repairHint: "Press REPAIR if sounds fail to load.",
-    slow: "Slow", medium: "Medium", fast: "Fast"
-  },
-  ru: { 
-    code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", go: "Начать",
-    welcome: "Нажмите Начать для активации звуков.", 
-    repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.",
-    slow: "Медленно", medium: "Средне", fast: "Быстро"
-  },
-  uk: { 
-    code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", go: "Почати",
-    welcome: "Натисніть Почати для активації звуків.", 
-    repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.",
-    slow: "Повільно", medium: "Середньо", fast: "Швидко"
-  }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR" },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ" },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
 };
 
-async function smartLoad(state) {
+async function smartLoad(state, file) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
     state.btn.classList.remove('broken', 'ready');
-    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random().toString(36).substring(7)}`;
+    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${Date.now()}`;
     
     try {
-        state.audio.src = url;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error();
+        const blob = await response.blob();
+        const objectURL = URL.createObjectURL(blob);
+        
+        state.audio.src = objectURL;
         state.audio.load();
-        const success = await new Promise((resolve) => {
+        
+        return new Promise((resolve) => {
             state.audio.oncanplaythrough = () => {
                 state.btn.classList.remove('loading', 'broken');
                 state.btn.classList.add('ready');
                 state.isLoaded = true;
                 resolve(true);
             };
-            state.audio.onerror = () => resolve(false);
-            setTimeout(() => resolve(false), 12000);
+            setTimeout(() => resolve(false), 15000);
         });
-        if (!success) handleLoadError(state);
     } catch (e) {
-        handleLoadError(state);
+        state.btn.classList.remove('loading');
+        state.btn.classList.add('broken');
+        return false;
     }
 }
 
-function handleLoadError(state) {
-    state.isLoaded = false;
-    state.btn.classList.remove('loading');
-    state.btn.classList.add('broken');
-    if (state.retryTimer) clearTimeout(state.retryTimer);
-    state.retryTimer = setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 5000);
+async function startQueue() {
+    for (let state of audioElements) {
+        await smartLoad(state, state.fileName);
+        await new Promise(r => setTimeout(r, 200)); 
+    }
 }
 
 function initAudioContext() {
@@ -233,18 +224,22 @@ sounds.forEach((s) => {
   btn.className = 'sound-button';
   btn.innerHTML = `<span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
+
   const audio = new Audio();
   audio.loop = true; audio.crossOrigin = "anonymous";
   audio.setAttribute('playsinline', '');
-  const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false, retryTimer: null };
+
+  const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false };
+
   btn.onclick = () => { 
     initAudioContext(); 
-    if (state.retryTimer) clearTimeout(state.retryTimer);
-    if(!state.isLoaded) { smartLoad(state); return; }
+    if(!state.isLoaded) { smartLoad(state, state.fileName); return; }
     state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
   };
   audioElements.push(state);
 });
+
+startQueue();
 
 function fadeIn(el) {
   if (!audioCtx) initAudioContext();
@@ -272,16 +267,18 @@ function fadeOut(el) {
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
-const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
-const vCan = document.getElementById('vis'), vCtx = vCan.getContext('2d');
+const sCan = document.getElementById('stars'); const sCtx = sCan.getContext('2d');
+const vCan = document.getElementById('vis'); const vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
 window.onresize = res; res();
+
 const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
 
 function animate(){
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
+  
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
@@ -289,12 +286,15 @@ function animate(){
         vol /= el.tileDataArray.length;
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        if(Math.random() < (0.05 + vol/255*0.4)) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        if(Math.random() < (0.05 + vol/255*0.4)){
+          particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        }
     } else if(el.isLoaded) { 
         el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
         el.visBar.style.width = '0%';
     }
   });
+
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.y -= p.s; p.al -= 0.001;
     vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
@@ -316,47 +316,22 @@ function runRandom() {
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
-function setSpeed(v, key) { 
-    currentSpeedValue = v; 
-    const t = uiTL[langOrder[langIdx]];
-    document.getElementById('speedTrigger').innerText = t[key];
-    document.getElementById('speedDropdown').classList.remove('open'); 
-    if(randomActive){clearTimeout(nextCycleTimeout); runRandom();} 
-}
-
+function setSpeed(v, l) { currentSpeedValue=v; document.getElementById('speedTrigger').innerText=l; document.getElementById('speedDropdown').classList.remove('open'); if(randomActive){clearTimeout(nextCycleTimeout); runRandom();} }
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % 3; updateUI(); };
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
-document.getElementById('helpBtn').onclick = () => { document.getElementById('welcomeModal').style.display='flex'; };
-
-document.getElementById('closeWelcome').onclick = () => { 
-  initAudioContext(); 
-  document.getElementById('welcomeModal').style.display='none'; 
-  audioElements.forEach(state => smartLoad(state));
-};
+document.getElementById('closeWelcome').onclick = () => { initAudioContext(); document.getElementById('welcomeModal').style.display='none'; };
 
 function updateUI(){
-  const t = uiTL[langOrder[langIdx]];
-  document.getElementById('title').innerText = t.title;
-  document.getElementById('langBtn').innerText = t.code;
-  document.getElementById('randomBtn').innerText = randomActive ? t.pause : t.play;
-  document.getElementById('repairBtn').innerText = t.repair;
-  document.getElementById('welcomeText').innerText = t.welcome;
-  document.getElementById('repairHintText').innerText = t.repairHint;
-  document.getElementById('closeWelcome').innerText = t.go;
-  
-  // Обновляем текст селектора скорости
-  const currentSpeedKey = currentSpeedValue === 10 ? 'fast' : (currentSpeedValue === 30 ? 'medium' : 'slow');
-  document.getElementById('speedTrigger').innerText = t[currentSpeedKey];
-  document.getElementById('optFast').innerText = t.fast;
-  document.getElementById('optMed').innerText = t.medium;
-  document.getElementById('optSlow').innerText = t.slow;
-
-  audioElements.forEach((el,i) => el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]);
+  const t=uiTL[langOrder[langIdx]];
+  document.getElementById('title').innerText=t.title;
+  document.getElementById('langBtn').innerText=t.code;
+  document.getElementById('randomBtn').innerText=randomActive?t.pause:t.play;
+  document.getElementById('repairBtn').innerText=t.repair;
+  audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
 }
-
-window.onclick = () => document.getElementById('speedDropdown').classList.remove('open');
+window.onclick=()=>document.getElementById('speedDropdown').classList.remove('open');
 updateUI();
 </script>
 </body>
