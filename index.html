@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
 <title>BUCKET ASMR</title>
@@ -223,10 +224,35 @@ function handleLoadError(state) {
 function initAudioContext() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  
+  // КЛЮЧ ДЛЯ iOS: Создаем тихий осциллятор для поддержания активности аудио-сессии
+  const osc = audioCtx.createOscillator();
+  const silentGain = audioCtx.createGain();
+  silentGain.gain.value = 0.001; 
+  osc.connect(silentGain);
+  silentGain.connect(audioCtx.destination);
+  osc.start();
+
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
+  
+  // Media Session для iOS экрана блокировки
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: 'BUCKET ASMR',
+      artist: 'Relax Mode',
+      album: 'ASMR'
+    });
+  }
 }
+
+// Следим за тем, чтобы контекст не засыпал при сворачивании
+document.addEventListener('visibilitychange', () => {
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+});
 
 function showHelp() {
     document.getElementById('welcomeModal').style.display = 'flex';
@@ -308,7 +334,6 @@ function animate(){
 }
 animate();
 
-// Умный рандом: 25% шанс на 3-4 звука, 75% на 1-2
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
@@ -316,9 +341,9 @@ function runRandom() {
   
   let count;
   if (Math.random() < 0.25) {
-      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3); // 3-4
+      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3); // 3-4 звука
   } else {
-      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); // 1-2
+      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); // 1-2 звука
   }
   
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
@@ -338,7 +363,6 @@ function setSpeed(v, key) {
 
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
 
-// Общий обработчик смены языка
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
     btn.onclick = (e) => {
         e.stopPropagation();
