@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
 <title>BUCKET ASMR</title>
@@ -187,7 +185,7 @@ const uiTL = {
   uk: { 
     code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", 
     welcome: "Натисніть OK та Грати для активації звуків.", 
-    repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.",
+    repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.",
     speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" }
   }
 };
@@ -218,38 +216,20 @@ function handleLoadError(state) {
     state.btn.classList.remove('loading');
     state.btn.classList.add('broken');
     if (state.retryTimer) clearTimeout(state.retryTimer);
-    state.retryTimer = setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 1500);
+    // Повтор через 1 секунду по просьбе
+    state.retryTimer = setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 1000);
 }
 
 function initAudioContext() {
-  if (audioCtx && audioCtx.state !== 'closed') {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    return;
-  }
-  
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  audioCtx = new AudioContextClass();
-  
-  // Создаем анализатор сразу
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
-
-  // Для iOS: MediaSession
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: 'BUCKET ASMR',
-      artist: 'Relax',
-      album: 'ASMR'
-    });
-  }
 }
 
-// Принудительная активация контекста при каждом взаимодействии (критично для iOS)
-function forceResume() {
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
+function showHelp() {
+    document.getElementById('welcomeModal').style.display = 'flex';
 }
 
 const grid = document.getElementById('soundGrid');
@@ -258,18 +238,13 @@ sounds.forEach((s) => {
   btn.className = 'sound-button';
   btn.innerHTML = `<span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
-  
   const audio = new Audio();
-  audio.loop = true; 
-  audio.crossOrigin = "anonymous";
+  audio.loop = true; audio.crossOrigin = "anonymous";
   audio.setAttribute('playsinline', '');
-  audio.preload = 'auto';
-
   const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), targetVol: 0, source: null, isLoaded: false, retryTimer: null };
-  
   btn.onclick = () => { 
-    initAudioContext();
-    forceResume();
+    initAudioContext(); 
+    if (state.retryTimer) clearTimeout(state.retryTimer);
     if(!state.isLoaded) { smartLoad(state); return; }
     state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
   };
@@ -277,9 +252,9 @@ sounds.forEach((s) => {
 });
 
 function fadeIn(el) {
-  forceResume();
+  if (!audioCtx) initAudioContext();
   el.audio.play().then(() => {
-    if (!el.source && audioCtx) {
+    if (!el.source) {
       el.source = audioCtx.createMediaElementSource(el.audio);
       el.gainNode = audioCtx.createGain();
       el.analyser = audioCtx.createAnalyser();
@@ -291,15 +266,15 @@ function fadeIn(el) {
     }
     el.btn.classList.add('active');
     el.targetVol = 0.6;
-    if (el.gainNode) el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.2);
-  }).catch(e => console.log("Play blocked:", e));
+    el.gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.4);
+  }).catch(() => {});
 }
 
 function fadeOut(el) {
   el.btn.classList.remove('active');
   el.targetVol = 0;
-  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
-  setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 600);
+  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.8);
+  setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
 const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
@@ -312,23 +287,18 @@ function animate(){
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
-  
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
-        el.visBar.style.width = `${Math.min(100, (vol/120)*100)}%`;
+        el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
         if(Math.random() < (0.05 + vol/255*0.4)) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
-    } else if(el.isLoaded && !el.btn.classList.contains('active')) { 
-        el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
-        el.visBar.style.width = '0%'; 
-    }
+    } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
-
   for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.002;
+    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
     vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
     vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`;
     vCtx.fill();
@@ -338,12 +308,18 @@ function animate(){
 }
 animate();
 
+// Умный рандом: 25% шанс на 3-4 звука, 75% на 1-2
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
   
-  let count = (Math.random() < 0.25) ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  let count;
+  if (Math.random() < 0.25) {
+      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3); // 3-4
+  } else {
+      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); // 1-2
+  }
   
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
@@ -354,13 +330,15 @@ let currentSpeedKey = 'fast';
 function setSpeed(v, key) { 
     currentSpeedValue = v; 
     currentSpeedKey = key;
-    updateUI();
+    const t = uiTL[langOrder[langIdx]];
+    document.getElementById('speedTrigger').innerText = t.speeds[key]; 
     document.getElementById('speedDropdown').classList.remove('open'); 
     if(randomActive){ clearTimeout(nextCycleTimeout); runRandom(); } 
 }
 
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
 
+// Общий обработчик смены языка
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
     btn.onclick = (e) => {
         e.stopPropagation();
@@ -369,20 +347,10 @@ document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
     };
 });
 
-document.getElementById('randomBtn').onclick = () => { 
-    initAudioContext(); 
-    forceResume();
-    randomActive = !randomActive; 
-    if(randomActive) runRandom(); 
-    else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } 
-    updateUI(); 
-};
-
+document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
-
 document.getElementById('closeWelcome').onclick = () => { 
   initAudioContext(); 
-  forceResume();
   document.getElementById('welcomeModal').style.display='none'; 
   audioElements.forEach(state => smartLoad(state));
 };
