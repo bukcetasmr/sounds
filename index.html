@@ -52,6 +52,7 @@
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 80px; }
   #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
   
+  /* Кнопка Sleep Mode (спокойные тона) */
   #sleepBtn { background: rgba(100, 150, 255, 0.1); border: 1px solid rgba(100, 150, 255, 0.2); color: #aabbff; }
   #sleepBtn.active { background: rgba(40, 50, 100, 0.6); color: #ccddee; border-color: rgba(100, 150, 255, 0.4); box-shadow: 0 0 15px rgba(0,0,50,0.5); }
 
@@ -197,28 +198,10 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep mode", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Sleep mode", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Sleep mode", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
-
-// Функция для поддержки фонового режима на iOS
-function setupMediaSession() {
-    if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: 'BUCKET ASMR',
-            artist: 'Sleep Mode Active',
-            album: 'Ambient Sounds'
-        });
-
-        navigator.mediaSession.setActionHandler('play', () => {
-            if(!randomActive) document.getElementById('randomBtn').click();
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-            if(randomActive) document.getElementById('randomBtn').click();
-        });
-    }
-}
 
 async function smartLoad(state) {
     if (state.isLoaded) return;
@@ -244,19 +227,9 @@ function handleLoadError(state) {
 function initAudioContext() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  
-  // iOS Hack: Проигрываем тишину для активации аудио-движка
-  const silentBuffer = audioCtx.createBuffer(1, 1, 22050);
-  const source = audioCtx.createBufferSource();
-  source.buffer = silentBuffer;
-  source.connect(audioCtx.destination);
-  source.start(0);
-
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
-  
-  setupMediaSession();
   scheduleEvents();
 }
 
@@ -343,6 +316,7 @@ function scheduleEvents() {
 
 function animate(){
   if (sleepMode) return;
+  
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
@@ -377,8 +351,13 @@ function animate(){
         vol /= el.tileDataArray.length;
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        if(Math.random() < 0.08) steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
-        if(Math.random() < (0.05 + vol/255*0.4)) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        
+        if(Math.random() < 0.08) {
+            steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
+        }
+        if(Math.random() < (0.05 + vol/255*0.4)) {
+            particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        }
     } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
 
@@ -403,7 +382,9 @@ animationId = requestAnimationFrame(animate);
 
 function toggleSleep() {
     sleepMode = !sleepMode;
+    const btn = document.getElementById('sleepBtn');
     const canvases = [document.getElementById('stars'), document.getElementById('vis')];
+    
     if (sleepMode) {
         cancelAnimationFrame(animationId);
         canvases.forEach(c => c.classList.add('hidden'));
@@ -431,6 +412,7 @@ function runRandom() {
     : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
   
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
+
   const hasAudible = toPlay.some(el => !el.isMuted);
   if (!hasAudible) {
     const audibleOptions = readySounds.filter(el => !el.isMuted);
