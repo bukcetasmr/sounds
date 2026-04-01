@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
 <title>BUCKET ASMR</title>
@@ -52,7 +54,6 @@
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 80px; }
   #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
   
-  /* Кнопка Sleep Mode (спокойные тона) */
   #sleepBtn { background: rgba(100, 150, 255, 0.1); border: 1px solid rgba(100, 150, 255, 0.2); color: #aabbff; }
   #sleepBtn.active { background: rgba(40, 50, 100, 0.6); color: #ccddee; border-color: rgba(100, 150, 255, 0.4); box-shadow: 0 0 15px rgba(0,0,50,0.5); }
 
@@ -179,7 +180,7 @@ let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout 
 let sleepMode = false, animationId = null;
 
 const langOrder = ['en', 'uk', 'ru'];
-let audioElements = [], particles = [], steamParticles = [];
+let audioElements = [], steamParticles = [];
 
 let comet = null;
 let supernova = null;
@@ -203,6 +204,28 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
 
+// ХАК ДЛЯ IPHONE: Создание невидимого зацикленного видео
+function createVideoAnchor() {
+    const video = document.createElement('video');
+    video.setAttribute('loop', '');
+    video.setAttribute('playsinline', '');
+    video.muted = true;
+    video.style.cssText = 'position:fixed; opacity:0; pointer-events:none; width:1px; height:1px;';
+    // Пустое видео (base64 mp4 1x1)
+    video.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28ybXA0MQAAAAhmcmVlAAAAOG1kYXTeAAAAMm1vb3YAAABsbXZoZAAAAADbe9v823vb/AAAA+gAAAAAAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAYdWR0YQAAABBtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAACVpbHN0AAAAHqqpYXBwAAAAFmRhdGEAAAABAAAAAAAAVmlldw==';
+    document.body.appendChild(video);
+    
+    const startMedia = () => {
+        video.play().catch(()=>{});
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        window.removeEventListener('click', startMedia);
+        window.removeEventListener('touchstart', startMedia);
+    };
+    window.addEventListener('click', startMedia);
+    window.addEventListener('touchstart', startMedia);
+}
+createVideoAnchor();
+
 async function smartLoad(state) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
@@ -225,11 +248,20 @@ function handleLoadError(state) {
 }
 
 function initAudioContext() {
-  if (audioCtx) return;
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
+  
+  // Регистрация MediaSession для управления на заблокированном экране
+  if (navigator.mediaSession) {
+    navigator.mediaSession.playbackState = "playing";
+  }
+  
   scheduleEvents();
 }
 
@@ -256,9 +288,7 @@ sounds.forEach((s) => {
     state.isMuted = !state.isMuted;
     state.muteBtn.classList.toggle('muted', state.isMuted);
     state.muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
-    if (state.gainNode) {
-        state.gainNode.gain.setTargetAtTime(state.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.2);
-    }
+    if (state.gainNode) state.gainNode.gain.setTargetAtTime(state.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.2);
   };
 
   btn.onclick = () => { 
@@ -316,7 +346,6 @@ function scheduleEvents() {
 
 function animate(){
   if (sleepMode) return;
-  
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
@@ -355,9 +384,6 @@ function animate(){
         if(Math.random() < 0.08) {
             steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
         }
-        if(Math.random() < (0.05 + vol/255*0.4)) {
-            particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
-        }
     } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
 
@@ -369,30 +395,23 @@ function animate(){
     vCtx.fillStyle = grad; vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); vCtx.fill();
     if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
   }
-
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
-    vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`; vCtx.fill();
-    if(p.al <= 0) particles.splice(i, 1);
-  }
   animationId = requestAnimationFrame(animate);
 }
 animationId = requestAnimationFrame(animate);
 
 function toggleSleep() {
     sleepMode = !sleepMode;
-    const btn = document.getElementById('sleepBtn');
     const canvases = [document.getElementById('stars'), document.getElementById('vis')];
-    
     if (sleepMode) {
         cancelAnimationFrame(animationId);
         canvases.forEach(c => c.classList.add('hidden'));
         document.body.classList.remove('fancy-bg');
         document.body.style.background = '#000';
         audioElements.forEach(el => {
-            el.visBar.style.width = '0%';
-            if(el.btn.classList.contains('active')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.2)';
+            if (el.isLoaded) {
+                el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)';
+                el.visBar.style.width = '0%';
+            }
         });
     } else {
         canvases.forEach(c => c.classList.remove('hidden'));
@@ -406,29 +425,14 @@ function runRandom() {
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  
-  let count = Math.random() < 0.25 
-    ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) 
-    : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
-  
+  let count = Math.random() < 0.25 ? Math.min(readySounds.length, 4) : Math.min(readySounds.length, 2);
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-
-  const hasAudible = toPlay.some(el => !el.isMuted);
-  if (!hasAudible) {
-    const audibleOptions = readySounds.filter(el => !el.isMuted);
-    if (audibleOptions.length > 0) {
-      const randomAudible = audibleOptions[Math.floor(Math.random() * audibleOptions.length)];
-      if (!toPlay.includes(randomAudible)) toPlay.push(randomAudible);
-    }
-  }
-
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
-let currentSpeedKey = 'fast';
 function setSpeed(v, key) { 
-    currentSpeedValue = v; currentSpeedKey = key;
+    currentSpeedKey = key; currentSpeedValue = v;
     updateUI();
     document.getElementById('speedDropdown').classList.remove('open'); 
     if(randomActive){ clearTimeout(nextCycleTimeout); runRandom(); } 
@@ -446,6 +450,7 @@ document.getElementById('closeWelcome').onclick = () => {
   audioElements.forEach(state => smartLoad(state));
 };
 
+let currentSpeedKey = 'fast';
 function updateUI(){
   const t=uiTL[langOrder[langIdx]];
   document.getElementById('title').innerText=t.title;
@@ -457,7 +462,6 @@ function updateUI(){
   document.getElementById('speedTrigger').innerText=t.speeds[currentSpeedKey];
   document.getElementById('sleepBtn').innerText = `${t.sleep}: ${sleepMode ? 'ON' : 'OFF'}`;
   document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
-  
   const speedBtns = document.querySelectorAll('#speedDropdown button');
   speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
