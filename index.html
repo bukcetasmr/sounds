@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR</title>
+<title>BUCKET ASMR - BATTLE SKY</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -17,30 +17,24 @@
   body.fancy-bg {
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
   }
-
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
-  
   .container { 
     position: relative; z-index: 10; 
     display:flex; flex-direction: column; align-items:center; 
     padding:20px; height: 100vh; box-sizing: border-box; 
   }
-
   .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
   h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
-  
   #helpBtn {
     background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
     width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
     display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
     font-weight: bold; font-size: 18px;
   }
-
   .lang-btn-ui {
     background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4);
     padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;
   }
-
   .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
   .controls > button { 
     padding:8px 14px; border:none; border-radius:12px; 
@@ -48,18 +42,14 @@
     font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
     transition: all 0.3s ease;
   }
-  
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 80px; }
   #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
-  
   #sleepBtn { background: rgba(100, 150, 255, 0.1); border: 1px solid rgba(100, 150, 255, 0.2); color: #aabbff; }
   #sleepBtn.active { background: rgba(40, 50, 100, 0.6); color: #ccddee; border-color: rgba(100, 150, 255, 0.4); box-shadow: 0 0 15px rgba(0,0,50,0.5); }
-
   .sound-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
     gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
   }
-
   .sound-button { 
     aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
     background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.2); font-weight:bold; 
@@ -68,7 +58,6 @@
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
     padding: 5px;
   }
-
   .mute-btn {
     position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
     background: rgba(255,255,255,0.1); border-radius: 50%; display: none;
@@ -77,17 +66,14 @@
   }
   .sound-button.active .mute-btn { display: flex; }
   .mute-btn.muted { background: #ff5050; border-color: #ff5050; }
-
   .sound-button.loading { animation: pulse-load 1.2s infinite; color: #ffb400; }
   .sound-button.ready { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
   .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.2); color: white; }
   .sound-button.broken { border: 2px solid rgba(255, 50, 50, 0.6) !important; color: #ff5050; }
-
   @keyframes pulse-load {
     0%, 100% { background: rgba(255, 180, 0, 0.05); }
     50% { background: rgba(255, 180, 0, 0.2); }
   }
-
   .tile-vis {
     position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
     width: 30px; height: 4px; background: rgba(255,255,255,0.2);
@@ -95,7 +81,6 @@
   }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
   .sound-button.active .tile-vis { display: block; }
-
   .custom-select-container { position: relative; }
   .select-trigger {
     padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2);
@@ -174,14 +159,28 @@
 
 <script>
 let audioCtx = null, globalAnalyser = null;
-let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout = null;
+let currentSpeedValue = 11, currentSpeedKey = 'fast', langIdx = 0, randomActive = false, nextCycleTimeout = null;
 let sleepMode = false, animationId = null;
 
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [], steamParticles = [];
 
-let comet = null;
-let supernova = null;
+let comets = [];
+let skyObjects = []; 
+let interceptors = []; 
+let smokeTrails = [];
+let explosions = []; 
+let fallingDebris = [];
+let groundFires = []; 
+
+const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
+const vCan = document.getElementById('vis'), vCtx = vCan.getContext('2d');
+
+function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
+window.onresize = res; res();
+
+const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
+let starDust = Array.from({length: 15}, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, vx: Math.random()*0.1-0.05, vy: Math.random()*0.1+0.05, r: Math.random()*2 }));
 let fogParticles = Array.from({length: 5}, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 150+Math.random()*100, opacity: 0.03 + Math.random()*0.05, vx: Math.random()*0.2 - 0.1 }));
 
 const sounds = [
@@ -199,63 +198,221 @@ const sounds = [
 const uiTL = {
   en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
   ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуков.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
 
-// Исправленная функция загрузки
-async function smartLoad(state) {
-    if (state.isLoaded) return true;
-    state.btn.classList.add('loading');
-    
-    // Прямая ссылка без кэширующих параметров (лучше для стриминга на мобилках)
-    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}`;
-    
-    try {
-        state.audio.src = url;
-        state.audio.load();
-        
-        const success = await new Promise((resolve) => {
-            state.audio.oncanplaythrough = () => { 
-                state.btn.classList.remove('loading', 'broken'); 
-                state.btn.classList.add('ready'); 
-                state.isLoaded = true; 
-                resolve(true); 
-            };
-            state.audio.onerror = () => resolve(false);
-            // Тайм-аут 15 секунд
-            setTimeout(() => resolve(false), 15000);
-        });
+// --- FIX: Help Function ---
+function showHelp() {
+  document.getElementById('welcomeModal').style.display = 'flex';
+}
 
-        if (!success) {
-            handleLoadError(state);
-            return false;
+function triggerComet() {
+    if (sleepMode) return;
+    const isClose = Math.random() < 0.15;
+    const side = Math.random() > 0.5 ? 1 : -1;
+    comets.push({
+        x: side === 1 ? -300 : innerWidth + 300,
+        y: Math.random() * innerHeight,
+        vx: (2 + Math.random() * 5) * side,
+        vy: (Math.random() - 0.5) * 4,
+        width: isClose ? 20 : 2,
+        opacity: isClose ? 0.3 : 0.8,
+        blur: isClose ? 10 : 0
+    });
+}
+
+function spawnSkyObject() {
+    if (sleepMode) return;
+    const direction = Math.random() > 0.5 ? 1 : -1;
+    skyObjects.push({
+        x: direction === 1 ? -100 : innerWidth + 100,
+        y: Math.random() * (innerHeight * 0.4),
+        type: Math.random() > 0.3 ? 'drone' : 'missile',
+        speed: 0.6 + Math.random() * 0.8,
+        dir: direction,
+        targetable: true
+    });
+}
+
+function triggerDefense(target) {
+    const isDrone = Math.random() > 0.5;
+    interceptors.push({
+        x: Math.random() * innerWidth,
+        y: innerHeight + 50,
+        target: target,
+        type: isDrone ? 'interceptor_drone' : 'aa_missile',
+        speed: isDrone ? 1.5 : 2.5,
+        life: 1.0,
+        missed: false 
+    });
+}
+
+function animate() {
+    if (sleepMode) return;
+    sCtx.clearRect(0,0,innerWidth,innerHeight);
+    starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
+    vCtx.clearRect(0,0,innerWidth,innerHeight);
+
+    comets.forEach((c, i) => {
+        c.x += c.vx; c.y += c.vy;
+        vCtx.save();
+        if(c.blur > 0) vCtx.filter = `blur(${c.blur}px)`;
+        let g = vCtx.createLinearGradient(c.x, c.y, c.x - c.vx*5, c.y - c.vy*5);
+        g.addColorStop(0, `rgba(255,255,255,${c.opacity})`);
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        vCtx.strokeStyle = g; vCtx.lineWidth = c.width; vCtx.beginPath();
+        vCtx.moveTo(c.x, c.y); vCtx.lineTo(c.x - c.vx*10, c.y - c.vy*10); vCtx.stroke();
+        vCtx.restore();
+        if(c.x < -1000 || c.x > innerWidth + 1000) comets.splice(i,1);
+    });
+
+    skyObjects.forEach((obj, i) => {
+        obj.x += obj.speed * obj.dir;
+        obj.y += Math.sin(Date.now()*0.001) * 0.3;
+        vCtx.fillStyle = obj.type === 'drone' ? '#fff' : '#ff4444';
+        if(obj.type === 'drone') { vCtx.fillRect(obj.x-4, obj.y-1, 8, 2); vCtx.fillRect(obj.x-1, obj.y-3, 2, 6); }
+        else { vCtx.beginPath(); vCtx.arc(obj.x, obj.y, 2.5, 0, Math.PI*2); vCtx.fill(); }
+
+        if(obj.targetable && Math.random() < 0.02) {
+            obj.targetable = false; triggerDefense(obj);
         }
-        return true;
-    } catch (e) { 
-        handleLoadError(state); 
-        return false;
-    }
+        if(obj.x < -200 || obj.x > innerWidth + 200) skyObjects.splice(i,1);
+    });
+
+    interceptors.forEach((ic, i) => {
+        if (!skyObjects.includes(ic.target)) {
+            ic.life -= 0.01;
+            ic.y -= ic.speed;
+            if (ic.life <= 0) interceptors.splice(i, 1);
+            return;
+        }
+
+        let dx = ic.target.x - ic.x, dy = ic.target.y - ic.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+
+        ic.x += (dx/dist) * ic.speed; 
+        ic.y += (dy/dist) * ic.speed;
+
+        if(Math.random() > 0.2) smokeTrails.push({ x: ic.x, y: ic.y, r: 2, life: 0.8, dark: false });
+
+        vCtx.fillStyle = ic.type === 'aa_missile' ? '#ffaa00' : '#00aaff';
+        vCtx.beginPath(); vCtx.arc(ic.x, ic.y, 2.5, 0, Math.PI*2); vCtx.fill();
+
+        if(dist < 12) {
+            if (Math.random() < 0.85) { 
+                explosions.push({x: ic.x, y: ic.y, r: 5, maxR: 35, life: 1.0, color: '255,150,50'});
+                fallingDebris.push({ x: ic.target.x, y: ic.target.y, vx: ic.target.speed * ic.target.dir * 0.3, vy: 0.2, rot: 0, vRot: Math.random()*0.06-0.03 });
+                skyObjects = skyObjects.filter(o => o !== ic.target);
+                interceptors.splice(i, 1);
+            } else {
+                ic.x += (dx/dist) * 40; 
+                ic.y += (dy/dist) * 40;
+                explosions.push({x: ic.x, y: ic.y, r: 2, maxR: 10, life: 0.3, color: '200,200,200'});
+            }
+        }
+    });
+
+    fallingDebris.forEach((d, i) => {
+        d.vy += 0.015; d.x += d.vx; d.y += d.vy; d.rot += d.vRot;
+        if(Math.random() > 0.3) smokeTrails.push({ x: d.x, y: d.y, r: 3.5, life: 1.2, dark: true });
+        vCtx.save(); vCtx.translate(d.x, d.y); vCtx.rotate(d.rot);
+        vCtx.fillStyle = '#555'; vCtx.fillRect(-4, -1, 8, 2);
+        vCtx.restore();
+        if(d.y > innerHeight - 5) {
+            explosions.push({x: d.x, y: innerHeight, r: 10, maxR: 60, life: 1.5, color: '255,80,0'});
+            groundFires.push({ x: d.x, y: innerHeight, timer: 400 });
+            fallingDebris.splice(i, 1);
+        }
+    });
+
+    groundFires.forEach((f, i) => {
+        if(Math.random() > 0.5) smokeTrails.push({ x: f.x + (Math.random()*12-6), y: f.y, r: 4 + Math.random()*5, life: 1.8, dark: true });
+        f.timer--;
+        if(f.timer <= 0) groundFires.splice(i, 1);
+    });
+
+    smokeTrails.forEach((s, i) => {
+        vCtx.fillStyle = s.dark ? `rgba(20, 20, 20, ${s.life * 0.7})` : `rgba(150, 150, 150, ${s.life * 0.3})`;
+        vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); vCtx.fill();
+        s.r += 0.04; s.life -= 0.006;
+        if(s.life <= 0) smokeTrails.splice(i, 1);
+    });
+
+    explosions.forEach((ex, i) => {
+        let g = vCtx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, ex.r);
+        g.addColorStop(0, `rgba(255,255,200,${ex.life})`);
+        g.addColorStop(0.4, `rgba(${ex.color},${ex.life * 0.8})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        vCtx.fillStyle = g; vCtx.beginPath(); vCtx.arc(ex.x, ex.y, ex.r, 0, Math.PI*2); vCtx.fill();
+        ex.r += (ex.maxR - ex.r) * 0.08; ex.life -= 0.02;
+        if(ex.life <= 0) explosions.splice(i,1);
+    });
+
+    starDust.forEach(d => {
+        d.x += d.vx; d.y += d.vy;
+        if(d.x > innerWidth) d.x = 0; if(d.y > innerHeight) d.y = 0;
+        vCtx.fillStyle = 'rgba(255,255,255,0.05)';
+        vCtx.beginPath(); vCtx.arc(d.x, d.y, d.r, 0, Math.PI*2); vCtx.fill();
+    });
+
+    fogParticles.forEach(f => {
+        f.x += f.vx; if (f.x > innerWidth + f.r) f.x = -f.r; if (f.x < -f.r) f.x = innerWidth + f.r;
+        let g = vCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+        g.addColorStop(0, `rgba(180, 200, 255, ${f.opacity})`); g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        vCtx.fillStyle = g; vCtx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
+    });
+
+    audioElements.forEach(el => {
+        if(el.analyser && el.btn.classList.contains('active')) {
+            el.analyser.getByteFrequencyData(el.tileDataArray);
+            let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
+            vol /= el.tileDataArray.length;
+            el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
+            el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
+            if(Math.random() < (0.05 + vol/255*0.4)) {
+                particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.3 + (vol/100))/3, al: 0.8, c: el.color });
+            }
+        } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
+    });
+
+    particles.forEach((p, i) => {
+        p.y -= p.s; p.al -= 0.001;
+        vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`;
+        vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2); vCtx.fill();
+        if(p.al <= 0) particles.splice(i, 1);
+    });
+
+    animationId = requestAnimationFrame(animate);
+}
+
+function scheduleEvents() {
+    setInterval(() => { if(Math.random() < 0.4) triggerComet(); }, 5000);
+    setInterval(() => { if(Math.random() < 0.8) spawnSkyObject(); }, 4000);
+}
+
+async function smartLoad(state) {
+    if (state.isLoaded) return;
+    state.btn.classList.add('loading');
+    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random().toString(36).substring(7)}`;
+    try {
+        state.audio.src = url; state.audio.load();
+        state.audio.oncanplaythrough = () => { state.btn.classList.remove('loading', 'broken'); state.btn.classList.add('ready'); state.isLoaded = true; };
+        state.audio.onerror = () => handleLoadError(state);
+    } catch (e) { handleLoadError(state); }
 }
 
 function handleLoadError(state) {
-    state.isLoaded = false; 
-    state.btn.classList.remove('loading'); 
-    state.btn.classList.add('broken');
+    state.isLoaded = false; state.btn.classList.remove('loading'); state.btn.classList.add('broken');
+    setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 2000);
 }
 
-async function initAudioContext() {
-  if (audioCtx) {
-      if (audioCtx.state === 'suspended') await audioCtx.resume();
-      return;
-  }
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  globalAnalyser = audioCtx.createAnalyser();
-  globalAnalyser.fftSize = 64;
-  globalAnalyser.connect(audioCtx.destination);
-  scheduleEvents();
+function initAudioContext() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    globalAnalyser = audioCtx.createAnalyser();
+    globalAnalyser.fftSize = 64;
+    globalAnalyser.connect(audioCtx.destination);
 }
-
-function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
 
 const grid = document.getElementById('soundGrid');
 sounds.forEach((s) => {
@@ -263,34 +420,15 @@ sounds.forEach((s) => {
   btn.className = 'sound-button';
   btn.innerHTML = `<div class="mute-btn">🔊</div><span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
-  
-  const audio = new Audio();
-  audio.loop = true; 
-  audio.crossOrigin = "anonymous"; 
-  audio.setAttribute('playsinline', '');
-  audio.preload = "auto";
-  
-  const state = { 
-    audio, btn, color: s.color, fileName: s.file, 
-    visBar: btn.querySelector('.tile-vis-bar'), muteBtn: btn.querySelector('.mute-btn'),
-    targetVol: 0, source: null, isLoaded: false, isMuted: false 
-  };
-
+  const audio = new Audio(); audio.loop = true; audio.crossOrigin = "anonymous"; audio.setAttribute('playsinline', '');
+  const state = { audio, btn, color: s.color, fileName: s.file, visBar: btn.querySelector('.tile-vis-bar'), muteBtn: btn.querySelector('.mute-btn'), targetVol: 0, source: null, isLoaded: false, isMuted: false };
   state.muteBtn.onclick = (e) => {
-    e.stopPropagation();
-    state.isMuted = !state.isMuted;
+    e.stopPropagation(); state.isMuted = !state.isMuted;
     state.muteBtn.classList.toggle('muted', state.isMuted);
     state.muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
-    if (state.gainNode) {
-        state.gainNode.gain.setTargetAtTime(state.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.2);
-    }
+    if (state.gainNode) state.gainNode.gain.setTargetAtTime(state.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.2);
   };
-
-  btn.onclick = async () => { 
-    await initAudioContext(); 
-    if(!state.isLoaded) { await smartLoad(state); return; }
-    state.targetVol === 0 ? fadeIn(state) : fadeOut(state); 
-  };
+  btn.onclick = () => { initAudioContext(); if(!state.isLoaded) { smartLoad(state); return; } state.targetVol === 0 ? fadeIn(state) : fadeOut(state); };
   audioElements.push(state);
 });
 
@@ -298,111 +436,32 @@ function fadeIn(el) {
   el.audio.play().then(() => {
     if (!el.source) {
       el.source = audioCtx.createMediaElementSource(el.audio);
-      el.gainNode = audioCtx.createGain();
-      el.analyser = audioCtx.createAnalyser();
-      el.analyser.fftSize = 32;
-      el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
-      el.source.connect(el.gainNode);
-      el.gainNode.connect(el.analyser);
-      el.analyser.connect(globalAnalyser);
+      el.gainNode = audioCtx.createGain(); el.analyser = audioCtx.createAnalyser();
+      el.analyser.fftSize = 32; el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
+      el.source.connect(el.gainNode); el.gainNode.connect(el.analyser); el.analyser.connect(globalAnalyser);
     }
-    el.btn.classList.add('active');
-    el.targetVol = 0.6;
+    el.btn.classList.add('active'); el.targetVol = 0.6;
     el.gainNode.gain.setTargetAtTime(el.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.4);
-  }).catch(() => {});
+  });
 }
 
 function fadeOut(el) {
-  el.btn.classList.remove('active');
-  el.targetVol = 0;
+  el.btn.classList.remove('active'); el.targetVol = 0;
   if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.8);
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
-// Визуализация
-const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
-const vCan = document.getElementById('vis'), vCtx = vCan.getContext('2d');
-function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
-window.onresize = res; res();
-const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
-
-function triggerComet() { if (comet || sleepMode) return; comet = { x: -200, y: Math.random() * (innerHeight/2), speed: 8 + Math.random()*7, angle: 0.2 + Math.random()*0.3, len: 200, opacity: 0.8 }; }
-function triggerSupernova() { if (supernova || sleepMode) return; supernova = { x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 1, maxR: 40 + Math.random()*40, opacity: 0, stage: 'growing' }; }
-function triggerAurora() {
-    if (sleepMode) return;
-    const colors = ['radial-gradient(ellipse at bottom, #051510 0%, #0a0a1f 100%)', 'radial-gradient(ellipse at bottom, #100515 0%, #0a0a1f 100%)', 'radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%)'];
-    document.body.style.background = colors[Math.floor(Math.random()*colors.length)];
-}
-function scheduleEvents() {
-    setInterval(() => { if(Math.random() < 0.2) triggerComet(); }, 15000);
-    setInterval(() => { if(Math.random() < 0.1) triggerSupernova(); }, 20000);
-    setInterval(() => { if(Math.random() < 0.3) triggerAurora(); }, 30000);
-}
-
-function animate(){
-  if (sleepMode) return;
-  sCtx.clearRect(0,0,innerWidth,innerHeight);
-  starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
-  vCtx.clearRect(0,0,innerWidth,innerHeight);
-  fogParticles.forEach(f => {
-      f.x += f.vx; if (f.x > innerWidth + f.r) f.x = -f.r; if (f.x < -f.r) f.x = innerWidth + f.r;
-      let g = vCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
-      g.addColorStop(0, `rgba(255, 255, 255, ${f.opacity})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      vCtx.fillStyle = g; vCtx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
-  });
-  if (comet) {
-      vCtx.beginPath(); let g = vCtx.createLinearGradient(comet.x, comet.y, comet.x - comet.len, comet.y - (comet.len * comet.angle));
-      g.addColorStop(0, `rgba(255, 220, 150, ${comet.opacity})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      vCtx.strokeStyle = g; vCtx.lineWidth = 2; vCtx.moveTo(comet.x, comet.y);
-      vCtx.lineTo(comet.x - comet.len, comet.y - (comet.len * comet.angle)); vCtx.stroke();
-      comet.x += comet.speed; comet.y += comet.speed * comet.angle; if (comet.x > innerWidth + 300) comet = null;
-  }
-  if (supernova) {
-      vCtx.beginPath(); let g = vCtx.createRadialGradient(supernova.x, supernova.y, 0, supernova.x, supernova.y, supernova.r);
-      g.addColorStop(0, `rgba(255, 255, 255, ${supernova.opacity})`); g.addColorStop(0.2, `rgba(255, 200, 50, ${supernova.opacity*0.5})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      vCtx.fillStyle = g; vCtx.arc(supernova.x, supernova.y, supernova.r, 0, Math.PI*2); vCtx.fill();
-      if (supernova.stage === 'growing') { supernova.r += 0.5; supernova.opacity += 0.02; if (supernova.opacity >= 0.8) supernova.stage = 'fading'; }
-      else { supernova.r += 0.2; supernova.opacity -= 0.01; if (supernova.opacity <= 0) supernova = null; }
-  }
-  audioElements.forEach(el => {
-    if(el.analyser && el.btn.classList.contains('active')) {
-        el.analyser.getByteFrequencyData(el.tileDataArray);
-        let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
-        vol /= el.tileDataArray.length;
-        el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
-        el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        if(Math.random() < 0.08) steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
-        if(Math.random() < (0.05 + vol/255*0.4)) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
-    } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
-  });
-  for (let i = steamParticles.length - 1; i >= 0; i--) {
-    const s = steamParticles[i]; s.y -= s.speed; s.x += Math.sin(s.y * 0.01) * s.drift; s.opacity -= 0.0005;
-    let grad = vCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
-    let c = s.color.split(',').slice(0,3).join(',');
-    grad.addColorStop(0, `${c}, ${s.opacity})`); grad.addColorStop(1, `${c}, 0)`);
-    vCtx.fillStyle = grad; vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); vCtx.fill();
-    if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
-  }
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
-    vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`; vCtx.fill();
-    if(p.al <= 0) particles.splice(i, 1);
-  }
-  animationId = requestAnimationFrame(animate);
-}
-animationId = requestAnimationFrame(animate);
-
 function toggleSleep() {
     sleepMode = !sleepMode;
-    const canvases = [document.getElementById('stars'), document.getElementById('vis')];
+    const btn = document.getElementById('sleepBtn');
     if (sleepMode) {
         cancelAnimationFrame(animationId);
-        canvases.forEach(c => c.classList.add('hidden'));
-        document.body.classList.remove('fancy-bg');
+        document.getElementById('stars').classList.add('hidden');
+        document.getElementById('vis').classList.add('hidden');
         document.body.style.background = '#000';
     } else {
-        canvases.forEach(c => c.classList.remove('hidden'));
+        document.getElementById('stars').classList.remove('hidden');
+        document.getElementById('vis').classList.remove('hidden');
         document.body.classList.add('fancy-bg');
         animationId = requestAnimationFrame(animate);
     }
@@ -412,56 +471,11 @@ function toggleSleep() {
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
-  if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let count = Math.random() < 0.25 ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-  const hasAudible = toPlay.some(el => !el.isMuted);
-  if (!hasAudible) {
-    const audibleOptions = readySounds.filter(el => !el.isMuted);
-    if (audibleOptions.length > 0) {
-      const randomAudible = audibleOptions[Math.floor(Math.random() * audibleOptions.length)];
-      if (!toPlay.includes(randomAudible)) toPlay.push(randomAudible);
-    }
-  }
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
-
-let currentSpeedKey = 'fast';
-function setSpeed(v, key) { 
-    currentSpeedValue = v; currentSpeedKey = key;
-    updateUI();
-    document.getElementById('speedDropdown').classList.remove('open'); 
-    if(randomActive){ clearTimeout(nextCycleTimeout); runRandom(); } 
-}
-
-document.getElementById('sleepBtn').onclick = toggleSleep;
-document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
-document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
-    btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % 3; updateUI(); };
-});
-
-document.getElementById('randomBtn').onclick = async () => { 
-    await initAudioContext(); 
-    randomActive = !randomActive; 
-    if(randomActive) runRandom(); 
-    else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } 
-    updateUI(); 
-};
-
-document.getElementById('repairBtn').onclick = () => location.reload();
-
-// ГЛАВНОЕ ИСПРАВЛЕНИЕ ТУТ: Поочередная загрузка
-document.getElementById('closeWelcome').onclick = async () => { 
-  await initAudioContext(); 
-  document.getElementById('welcomeModal').style.display='none'; 
-  
-  for (const state of audioElements) {
-      await smartLoad(state);
-      // Пауза 100мс между запросами для стабильности
-      await new Promise(r => setTimeout(r, 100));
-  }
-};
 
 function updateUI(){
   const t=uiTL[langOrder[langIdx]];
@@ -470,16 +484,37 @@ function updateUI(){
   document.getElementById('randomBtn').innerText=randomActive?t.pause:t.play;
   document.getElementById('repairBtn').innerText=t.repair;
   document.getElementById('welcomeText').innerText=t.welcome;
-  document.getElementById('repairHint').innerText=t.repairHint;
-  document.getElementById('speedTrigger').innerText=t.speeds[currentSpeedKey];
   document.getElementById('sleepBtn').innerText = `${t.sleep}: ${sleepMode ? 'ON' : 'OFF'}`;
-  document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
-  const speedBtns = document.querySelectorAll('#speedDropdown button');
-  speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
+  
+  // --- FIX: Speed Translation ---
+  document.getElementById('speedTrigger').innerText = t.speeds[currentSpeedKey];
+  const speedButtons = document.querySelectorAll('#speedDropdown button');
+  speedButtons[0].innerText = t.speeds.fast;
+  speedButtons[1].innerText = t.speeds.medium;
+  speedButtons[2].innerText = t.speeds.slow;
+
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
 }
-window.onclick=()=>document.getElementById('speedDropdown').classList.remove('open');
+
+document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
+document.getElementById('sleepBtn').onclick = toggleSleep;
+document.getElementById('repairBtn').onclick = () => location.reload();
+document.getElementById('closeWelcome').onclick = () => { document.getElementById('welcomeModal').style.display='none'; audioElements.forEach(smartLoad); };
+document.querySelectorAll('.lang-switcher-btn').forEach(btn => btn.onclick = () => { langIdx = (langIdx + 1) % 3; updateUI(); });
+document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
+
+// --- FIX: Set Speed with updateUI ---
+function setSpeed(v, k) { 
+  currentSpeedValue = v; 
+  currentSpeedKey = k;
+  updateUI(); 
+  document.getElementById('speedDropdown').classList.remove('open'); 
+}
+
 updateUI();
+scheduleEvents();
+animationId = requestAnimationFrame(animate);
+
 </script>
 </body>
 </html>
