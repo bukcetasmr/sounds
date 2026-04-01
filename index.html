@@ -60,7 +60,6 @@
     padding: 5px;
   }
 
-  /* Кнопка MUTE */
   .mute-btn {
     position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
     background: rgba(255,255,255,0.1); border-radius: 50%; display: none;
@@ -238,7 +237,6 @@ sounds.forEach((s) => {
     targetVol: 0, source: null, isLoaded: false, isMuted: false 
   };
 
-  // Клик по кнопке MUTE
   state.muteBtn.onclick = (e) => {
     e.stopPropagation();
     state.isMuted = !state.isMuted;
@@ -367,11 +365,38 @@ animate();
 
 function runRandom() { 
   if(!randomActive) return; 
+  
   let readySounds = audioElements.filter(el => el.isLoaded);
-  if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let count = Math.random() < 0.25 ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  if (readySounds.length === 0) { 
+    nextCycleTimeout = setTimeout(runRandom, 1000); 
+    return; 
+  }
+
+  // Выбираем случайное кол-во звуков (от 1 до 4)
+  let count = Math.random() < 0.25 
+    ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) 
+    : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
+
+  // ПРОВЕРКА: Если среди выбранных звуков нет ни одного слышимого (все Mute)
+  const hasAudible = toPlay.some(el => !el.isMuted);
+
+  if (!hasAudible) {
+    // Ищем среди всех загруженных звуков те, которые НЕ заглушены кнопкой Mute
+    const audibleOptions = readySounds.filter(el => !el.isMuted);
+    if (audibleOptions.length > 0) {
+      // Принудительно берем один слышимый звук и подмешиваем в список
+      const randomAudible = audibleOptions[Math.floor(Math.random() * audibleOptions.length)];
+      if (!toPlay.includes(randomAudible)) {
+        toPlay.push(randomAudible);
+      }
+    }
+  }
+
+  // Запускаем выбранные, остальные глушим
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
+  
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
