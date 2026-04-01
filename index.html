@@ -9,7 +9,6 @@
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
-    /* Добавляем плавный переход для фонового градиента (Северное сияние) */
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
     transition: background 3s ease;
     font-family: Arial, sans-serif; color: white; overflow: hidden;
@@ -143,9 +142,9 @@
     <div class="custom-select-container">
         <div class="select-trigger" id="speedTrigger">Fast</div>
         <div class="custom-dropdown" id="speedDropdown">
-            <button onclick="setSpeed(6, 'fast')">Fast</button>
-            <button onclick="setSpeed(30, 'medium')">Medium</button>
-            <button onclick="setSpeed(60, 'slow')">Slow</button>
+            <button onclick="setSpeed(8, 'fast')">Fast</button>
+            <button onclick="setSpeed(22, 'medium')">Medium</button>
+            <button onclick="setSpeed(48, 'slow')">Slow</button>
         </div>
     </div>
   </div>
@@ -157,7 +156,7 @@
 let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 6, langIdx = 0, randomActive = false, nextCycleTimeout = null;
 const langOrder = ['en', 'uk', 'ru'];
-let audioElements = [], particles = [];
+let audioElements = [], particles = [], steamParticles = [];
 
 // --- ПЕРЕМЕННЫЕ ДЛЯ СОБЫТИЙ ---
 let comet = null;
@@ -232,7 +231,7 @@ function initAudioContext() {
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
-  scheduleEvents(); // Запуск случайных событий
+  scheduleEvents();
 }
 
 function showHelp() {
@@ -303,9 +302,9 @@ function triggerSupernova() {
 
 function triggerAurora() {
     const colors = [
-        'radial-gradient(ellipse at bottom, #051510 0%, #0a0a1f 100%)', // Зеленоватый
-        'radial-gradient(ellipse at bottom, #100515 0%, #0a0a1f 100%)', // Фиолетовый
-        'radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%)'  // Дефолт
+        'radial-gradient(ellipse at bottom, #051510 0%, #0a0a1f 100%)', 
+        'radial-gradient(ellipse at bottom, #100515 0%, #0a0a1f 100%)', 
+        'radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%)'
     ];
     document.body.style.background = colors[Math.floor(Math.random()*colors.length)];
 }
@@ -321,7 +320,7 @@ function animate(){
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
 
-  // Отрисовка Тумана
+  // Отрисовка постоянного Тумана (фон)
   fogParticles.forEach(f => {
       f.x += f.vx;
       if (f.x > innerWidth + f.r) f.x = -f.r;
@@ -373,10 +372,48 @@ function animate(){
         vol /= el.tileDataArray.length;
         el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
         el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
-        if(Math.random() < (0.05 + vol/255*0.4)) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        
+        // ГЕНЕРАЦИЯ ПАРА (Steam) - очень медленно и плавно
+        if(Math.random() < 0.08) {
+            steamParticles.push({
+                x: Math.random() * innerWidth,
+                y: innerHeight + 50,
+                r: 40 + Math.random() * 60, // Большой радиус для мягкости
+                opacity: 0.15 + (vol / 255) * 0.2,
+                speed: 0.3 + Math.random() * 0.5, // Реально медленно
+                drift: Math.random() * 0.4 - 0.2, // Смещение вбок
+                color: el.color
+            });
+        }
+
+        // Обычные мелкие частицы
+        if(Math.random() < (0.05 + vol/255*0.4)) {
+            particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        }
     } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
 
+  // Отрисовка МЕДЛЕННОГО ПАРА
+  for (let i = steamParticles.length - 1; i >= 0; i--) {
+    const s = steamParticles[i];
+    s.y -= s.speed;
+    s.x += Math.sin(s.y * 0.01) * s.drift; // Плавное покачивание
+    s.opacity -= 0.0005; // Исчезает очень долго
+
+    let grad = vCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+    let c = s.color.split(',').slice(0,3).join(',');
+    grad.addColorStop(0, `${c}, ${s.opacity})`);
+    grad.addColorStop(1, `${c}, 0)`);
+    
+    vCtx.fillStyle = grad;
+    vCtx.beginPath();
+    vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    vCtx.fill();
+
+    if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
+  }
+
+  // Отрисовка обычных частиц
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.y -= p.s; p.al -= 0.001;
     vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
