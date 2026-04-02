@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>BUCKET ASMR</title>
+<title>BUCKET ASMR DELUXE</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -179,10 +179,15 @@
   <div id="soundGrid" class="sound-grid"></div>
 </div>
 
+<video id="wakeLockVideo" playsinline muted loop style="display:none;">
+  <source src="https://raw.githubusercontent.com/anars/blank-audio/master/250-milliseconds-of-silence.mp3" type="video/mp4">
+</video>
+
 <script>
 let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout = null;
 let sleepMode = false, animationId = null;
+let wakeLock = null;
 
 const langOrder = ['en', 'pt', 'uk', 'ru'];
 let audioElements = [], particles = [], steamParticles = [];
@@ -191,105 +196,38 @@ let comet = null;
 let supernova = null;
 let fogParticles = Array.from({length: 5}, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 150+Math.random()*100, opacity: 0.03 + Math.random()*0.05, vx: Math.random()*0.2 - 0.1 }));
 
+// Данные звуков (универсальный список)
 const sounds = [
-  {
-    "file": "purplebrush.mp3",
-    "name": {
-      "en": "Purple Brush",
-      "pt": "Pincel Roxo",
-      "ru": "Фиолетовая кисть",
-      "uk": "Фіолетовий пензель"
-    },
-    "color": "rgba(150,100,255,0.5)"
-  },
-  {
-    "file": "greybrush.mp3",
-    "name": {
-      "en": "Grey Brush",
-      "pt": "Pincel Cinza",
-      "ru": "Серая кисть",
-      "uk": "Сірий пензель"
-    },
-    "color": "rgba(140,140,140,0.5)"
-  },
-  {
-    "file": "pinksoftbrush.mp3",
-    "name": {
-      "en": "Soft Brush",
-      "pt": "Pincel Macio",
-      "ru": "Мягкая кисть",
-      "uk": "М’який пензель"
-    },
-    "color": "rgba(255,182,193,0.5)"
-  },
-  {
-    "file": "strawberry.mp3",
-    "name": {
-      "en": "Strawberry",
-      "pt": "Morango",
-      "ru": "Клубника",
-      "uk": "Полуниця"
-    },
-    "color": "rgba(255,105,180,0.5)"
-  },
-  {
-    "file": "wax.mp3",
-    "name": {
-      "en": "Wax",
-      "pt": "Cera",
-      "ru": "Воск",
-      "uk": "Віск"
-    },
-    "color": "rgba(255,165,0,0.5)"
-  },
-  {
-    "file": "carrot.mp3",
-    "name": {
-      "en": "Carrot",
-      "pt": "Cenoura",
-      "ru": "Морковь",
-      "uk": "Морква"
-    },
-    "color": "rgba(255,140,0,0.5)"
-  },
-  {
-    "file": "choko.mp3",
-    "name": {
-      "en": "Choco",
-      "pt": "Chocolate",
-      "ru": "Шоколад",
-      "uk": "Шоколад"
-    },
-    "color": "rgba(139,69,19,0.5)"
-  },
-  {
-    "file": "wood.mp3",
-    "name": {
-      "en": "Wood",
-      "pt": "Madeira",
-      "ru": "Дерево",
-      "uk": "Дерево"
-    },
-    "color": "rgba(255,255,0,0.5)"
-  },
-  {
-    "file": "oldphone.mp3",
-    "name": {
-      "en": "Old Phone",
-      "pt": "Telefone Antigo",
-      "ru": "Телефон",
-      "uk": "Телефон"
-    },
-    "color": "rgba(50,50,50,0.5)"
-  }
+  { "file": "purplebrush.mp3", "name": { "en": "Purple Brush", "pt": "Pincel Roxo", "ru": "Фиолетовая кисть", "uk": "Фіолетовий пензель" }, "color": "rgba(150,100,255,0.5)" },
+  { "file": "greybrush.mp3", "name": { "en": "Grey Brush", "pt": "Pincel Cinza", "ru": "Серая кисть", "uk": "Сірий пензель" }, "color": "rgba(140,140,140,0.5)" },
+  { "file": "pinksoftbrush.mp3", "name": { "en": "Soft Brush", "pt": "Pincel Macio", "ru": "Мягкая кисть", "uk": "М’який пензель" }, "color": "rgba(255,182,193,0.5)" },
+  { "file": "strawberry.mp3", "name": { "en": "Strawberry", "pt": "Morango", "ru": "Клубника", "uk": "Полуниця" }, "color": "rgba(255,105,180,0.5)" },
+  { "file": "wax.mp3", "name": { "en": "Wax", "pt": "Cera", "ru": "Воск", "uk": "Віск" }, "color": "rgba(255,165,0,0.5)" },
+  { "file": "carrot.mp3", "name": { "en": "Carrot", "pt": "Cenoura", "ru": "Морковь", "uk": "Морква" }, "color": "rgba(255,140,0,0.5)" },
+  { "file": "choko.mp3", "name": { "en": "Choco", "pt": "Chocolate", "ru": "Шоколад", "uk": "Шоколад" }, "color": "rgba(139,69,19,0.5)" },
+  { "file": "wood.mp3", "name": { "en": "Wood", "pt": "Madeira", "ru": "Дерево", "uk": "Дерево" }, "color": "rgba(255,255,0,0.5)" },
+  { "file": "oldphone.mp3", "name": { "en": "Old Phone", "pt": "Telefone Antigo", "ru": "Телефон", "uk": "Телефон" }, "color": "rgba(50,50,50,0.5)" }
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
-  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", welcome: "Pressione OK e Tocar para ativar os sons.", repairHint: "Pressione REPARAR se os sons não carregarem.", sleep: "Dormir", speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds. Screen will stay awake in Deluxe.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
+  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", welcome: "Pressione OK e Tocar para sons. A tela não apagará no Deluxe.", repairHint: "Pressione REPARAR se os sons não carregarem.", sleep: "Dormir", speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть. В Deluxe экран не гаснет сам.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати. У Deluxe екран не згасне.", repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
+
+// Функция защиты экрана от выключения
+async function requestWakeLock() {
+  // Способ 1: API (Safari iOS 14+)
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+    } catch (err) {}
+  } 
+  // Способ 2: Видео (Для всех остальных)
+  const video = document.getElementById('wakeLockVideo');
+  if (video) video.play().catch(() => {});
+}
 
 async function smartLoad(state) {
     if (state.isLoaded) return;
@@ -301,14 +239,12 @@ async function smartLoad(state) {
     try {
         state.audio.src = url;
         state.audio.load();
-
         state.audio.onprogress = () => {
             if (state.audio.buffered.length > 0) {
                 const percent = (state.audio.buffered.end(0) / state.audio.duration) * 100;
                 state.btn.style.setProperty('--load-percent', `${Math.max(15, percent)}%`);
             }
         };
-
         const success = await new Promise((resolve) => {
             state.audio.oncanplaythrough = () => {
                 state.btn.style.setProperty('--load-percent', '100%');
@@ -322,7 +258,6 @@ async function smartLoad(state) {
             state.audio.onerror = () => resolve(false);
             setTimeout(() => resolve(false), 15000);
         });
-
         if (!success) handleLoadError(state);
     } catch (e) { handleLoadError(state); }
 }
@@ -343,6 +278,7 @@ function initAudioContext() {
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
   scheduleEvents();
+  requestWakeLock(); // Активируем удержание экрана при первом клике
 }
 
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
@@ -407,6 +343,7 @@ function fadeOut(el) {
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
+// Визуализация
 const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
 const vCan = document.getElementById('vis'), vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
@@ -426,15 +363,9 @@ function triggerComet() {
 }
 
 function triggerSupernova() { if (supernova || sleepMode) return; supernova = { x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 1, maxR: 40 + Math.random()*40, opacity: 0, stage: 'growing' }; }
-function triggerAurora() {
-    if (sleepMode) return;
-    const colors = ['radial-gradient(ellipse at bottom, #051510 0%, #0a0a1f 100%)', 'radial-gradient(ellipse at bottom, #100515 0%, #0a0a1f 100%)', 'radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%)'];
-    document.body.style.background = colors[Math.floor(Math.random()*colors.length)];
-}
 function scheduleEvents() {
     setInterval(() => { if(Math.random() < 0.25) triggerComet(); }, 12000);
     setInterval(() => { if(Math.random() < 0.1) triggerSupernova(); }, 20000);
-    setInterval(() => { if(Math.random() < 0.3) triggerAurora(); }, 30000);
 }
 
 function animate(){
@@ -485,9 +416,6 @@ function animate(){
           el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
           el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
           
-          if(Math.random() < 0.08) {
-              steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
-          }
           if(Math.random() < (0.05 + vol/255*0.4)) {
               particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
           }
@@ -495,20 +423,10 @@ function animate(){
     } else if(el.isLoaded) { 
         el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
         el.visBar.style.width = '0%'; 
-        el.btn.style.setProperty('--load-percent', '0%');
     }
   });
 
   if (!sleepMode) {
-    for (let i = steamParticles.length - 1; i >= 0; i--) {
-      const s = steamParticles[i]; s.y -= s.speed; s.x += Math.sin(s.y * 0.01) * s.drift; s.opacity -= 0.0005;
-      let grad = vCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
-      let c = s.color.split(',').slice(0,3).join(',');
-      grad.addColorStop(0, `${c}, ${s.opacity})`); grad.addColorStop(1, `${c}, 0)`);
-      vCtx.fillStyle = grad; vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); vCtx.fill();
-      if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
-    }
-
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i]; p.y -= p.s; p.al -= 0.001;
       vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
@@ -530,7 +448,6 @@ function toggleSleep() {
         document.body.classList.remove('fancy-bg');
         document.body.style.background = '#000';
         particles = [];
-        steamParticles = [];
     } else {
         canvases.forEach(c => c.classList.remove('hidden'));
         document.body.classList.add('fancy-bg');
@@ -542,16 +459,11 @@ function runRandom() {
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let count = Math.random() < 0.25 ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  
+  // Логика Deluxe: от 1 до 4 звуков одновременно
+  let count = Math.min(readySounds.length, Math.floor(Math.random() * 4) + 1);
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-  const hasAudible = toPlay.some(el => !el.isMuted);
-  if (!hasAudible) {
-    const audibleOptions = readySounds.filter(el => !el.isMuted);
-    if (audibleOptions.length > 0) {
-      const randomAudible = audibleOptions[Math.floor(Math.random() * audibleOptions.length)];
-      if (!toPlay.includes(randomAudible)) toPlay.push(randomAudible);
-    }
-  }
+  
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
