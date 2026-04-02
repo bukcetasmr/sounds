@@ -9,11 +9,15 @@
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
-    background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
+    background: #050505;
     transition: background 3s ease;
     font-family: Arial, sans-serif; color: white; overflow: hidden;
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
   }
+  body.fancy-bg {
+    background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
+  }
+
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
   
   .container { 
@@ -42,9 +46,15 @@
     padding:8px 14px; border:none; border-radius:12px; 
     background: rgba(255,255,255,0.2); color:white; cursor:pointer; 
     font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
+    transition: all 0.3s ease;
   }
+  
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 80px; }
   #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
+  
+  /* Кнопка Sleep Mode (спокойные тона) */
+  #sleepBtn { background: rgba(100, 150, 255, 0.1); border: 1px solid rgba(100, 150, 255, 0.2); color: #aabbff; }
+  #sleepBtn.active { background: rgba(40, 50, 100, 0.6); color: #ccddee; border-color: rgba(100, 150, 255, 0.4); box-shadow: 0 0 15px rgba(0,0,50,0.5); }
 
   .sound-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
@@ -60,7 +70,6 @@
     padding: 5px;
   }
 
-  /* Кнопка MUTE */
   .mute-btn {
     position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
     background: rgba(255,255,255,0.1); border-radius: 50%; display: none;
@@ -102,7 +111,8 @@
   .custom-dropdown.open { display: flex; }
   .custom-dropdown button { padding: 12px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; }
 
-  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; transition: opacity 1.5s ease; }
+  canvas.hidden { opacity: 0; }
   
   .modal {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -121,7 +131,7 @@
   .hint-text { font-size: 13px; color: #aaa; margin-top: 15px; display: block; line-height: 1.4; }
 </style>
 </head>
-<body>
+<body class="fancy-bg">
 
 <canvas id="stars"></canvas>
 <canvas id="vis"></canvas>
@@ -148,6 +158,7 @@
 
   <div class="controls">
     <button id="randomBtn">Play</button>
+    <button id="sleepBtn">Sleep: OFF</button>
     <button id="repairBtn">REPAIR</button>
     <div class="custom-select-container">
         <div class="select-trigger" id="speedTrigger">Fast</div>
@@ -165,6 +176,8 @@
 <script>
 let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout = null;
+let sleepMode = false, animationId = null;
+
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [], steamParticles = [];
 
@@ -185,9 +198,9 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
 
 async function smartLoad(state) {
@@ -238,7 +251,6 @@ sounds.forEach((s) => {
     targetVol: 0, source: null, isLoaded: false, isMuted: false 
   };
 
-  // Клик по кнопке MUTE
   state.muteBtn.onclick = (e) => {
     e.stopPropagation();
     state.isMuted = !state.isMuted;
@@ -289,9 +301,10 @@ function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height
 window.onresize = res; res();
 const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
 
-function triggerComet() { if (comet) return; comet = { x: -200, y: Math.random() * (innerHeight/2), speed: 8 + Math.random()*7, angle: 0.2 + Math.random()*0.3, len: 200, opacity: 0.8 }; }
-function triggerSupernova() { if (supernova) return; supernova = { x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 1, maxR: 40 + Math.random()*40, opacity: 0, stage: 'growing' }; }
+function triggerComet() { if (comet || sleepMode) return; comet = { x: -200, y: Math.random() * (innerHeight/2), speed: 8 + Math.random()*7, angle: 0.2 + Math.random()*0.3, len: 200, opacity: 0.8 }; }
+function triggerSupernova() { if (supernova || sleepMode) return; supernova = { x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 1, maxR: 40 + Math.random()*40, opacity: 0, stage: 'growing' }; }
 function triggerAurora() {
+    if (sleepMode) return;
     const colors = ['radial-gradient(ellipse at bottom, #051510 0%, #0a0a1f 100%)', 'radial-gradient(ellipse at bottom, #100515 0%, #0a0a1f 100%)', 'radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%)'];
     document.body.style.background = colors[Math.floor(Math.random()*colors.length)];
 }
@@ -302,6 +315,8 @@ function scheduleEvents() {
 }
 
 function animate(){
+  if (sleepMode) return;
+  
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
@@ -361,16 +376,52 @@ function animate(){
     vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`; vCtx.fill();
     if(p.al <= 0) particles.splice(i, 1);
   }
-  requestAnimationFrame(animate);
+  animationId = requestAnimationFrame(animate);
 }
-animate();
+animationId = requestAnimationFrame(animate);
+
+function toggleSleep() {
+    sleepMode = !sleepMode;
+    const btn = document.getElementById('sleepBtn');
+    const canvases = [document.getElementById('stars'), document.getElementById('vis')];
+    
+    if (sleepMode) {
+        cancelAnimationFrame(animationId);
+        canvases.forEach(c => c.classList.add('hidden'));
+        document.body.classList.remove('fancy-bg');
+        document.body.style.background = '#000';
+        audioElements.forEach(el => {
+            el.visBar.style.width = '0%';
+            if(el.btn.classList.contains('active')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.2)';
+        });
+    } else {
+        canvases.forEach(c => c.classList.remove('hidden'));
+        document.body.classList.add('fancy-bg');
+        animationId = requestAnimationFrame(animate);
+    }
+    updateUI();
+}
 
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let count = Math.random() < 0.25 ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  
+  let count = Math.random() < 0.25 
+    ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) 
+    : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
+
+  const hasAudible = toPlay.some(el => !el.isMuted);
+  if (!hasAudible) {
+    const audibleOptions = readySounds.filter(el => !el.isMuted);
+    if (audibleOptions.length > 0) {
+      const randomAudible = audibleOptions[Math.floor(Math.random() * audibleOptions.length)];
+      if (!toPlay.includes(randomAudible)) toPlay.push(randomAudible);
+    }
+  }
+
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
@@ -378,12 +429,12 @@ function runRandom() {
 let currentSpeedKey = 'fast';
 function setSpeed(v, key) { 
     currentSpeedValue = v; currentSpeedKey = key;
-    const t = uiTL[langOrder[langIdx]];
-    document.getElementById('speedTrigger').innerText = t.speeds[key]; 
+    updateUI();
     document.getElementById('speedDropdown').classList.remove('open'); 
     if(randomActive){ clearTimeout(nextCycleTimeout); runRandom(); } 
 }
 
+document.getElementById('sleepBtn').onclick = toggleSleep;
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % 3; updateUI(); };
@@ -404,6 +455,9 @@ function updateUI(){
   document.getElementById('welcomeText').innerText=t.welcome;
   document.getElementById('repairHint').innerText=t.repairHint;
   document.getElementById('speedTrigger').innerText=t.speeds[currentSpeedKey];
+  document.getElementById('sleepBtn').innerText = `${t.sleep}: ${sleepMode ? 'ON' : 'OFF'}`;
+  document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
+  
   const speedBtns = document.querySelectorAll('#speedDropdown button');
   speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
