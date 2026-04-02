@@ -300,34 +300,16 @@ function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height
 window.onresize = res; res();
 const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
 
-// --- ОБНОВЛЕННАЯ ЛОГИКА КОМЕТЫ ---
 function triggerComet() { 
     if (comet || sleepMode) return; 
-    
-    // Выбираем сторону вылета (0: слева, 1: справа, 2: сверху, 3: снизу)
     const side = Math.floor(Math.random() * 4);
     let x, y, vx, vy;
     const speed = 6 + Math.random() * 10;
-
-    if (side === 0) { // Слева направо
-        x = -100; y = Math.random() * innerHeight;
-        vx = speed; vy = (Math.random() - 0.5) * speed;
-    } else if (side === 1) { // Справа налево
-        x = innerWidth + 100; y = Math.random() * innerHeight;
-        vx = -speed; vy = (Math.random() - 0.5) * speed;
-    } else if (side === 2) { // Сверху вниз
-        x = Math.random() * innerWidth; y = -100;
-        vx = (Math.random() - 0.5) * speed; vy = speed;
-    } else { // Снизу вверх
-        x = Math.random() * innerWidth; y = innerHeight + 100;
-        vx = (Math.random() - 0.5) * speed; vy = -speed;
-    }
-
-    comet = { 
-        x, y, vx, vy, 
-        len: 150 + Math.random() * 150, 
-        opacity: 0.8 
-    }; 
+    if (side === 0) { x = -100; y = Math.random() * innerHeight; vx = speed; vy = (Math.random() - 0.5) * speed; }
+    else if (side === 1) { x = innerWidth + 100; y = Math.random() * innerHeight; vx = -speed; vy = (Math.random() - 0.5) * speed; }
+    else if (side === 2) { x = Math.random() * innerWidth; y = -100; vx = (Math.random() - 0.5) * speed; vy = speed; }
+    else { x = Math.random() * innerWidth; y = innerHeight + 100; vx = (Math.random() - 0.5) * speed; vy = -speed; }
+    comet = { x, y, vx, vy, len: 150 + Math.random() * 150, opacity: 0.8 }; 
 }
 
 function triggerSupernova() { if (supernova || sleepMode) return; supernova = { x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 1, maxR: 40 + Math.random()*40, opacity: 0, stage: 'growing' }; }
@@ -343,44 +325,38 @@ function scheduleEvents() {
 }
 
 function animate(){
-  if (sleepMode) return;
-  
-  sCtx.clearRect(0,0,innerWidth,innerHeight);
-  starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
-  vCtx.clearRect(0,0,innerWidth,innerHeight);
+  if (!sleepMode) {
+    sCtx.clearRect(0,0,innerWidth,innerHeight);
+    starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
+    vCtx.clearRect(0,0,innerWidth,innerHeight);
 
-  fogParticles.forEach(f => {
-      f.x += f.vx; if (f.x > innerWidth + f.r) f.x = -f.r; if (f.x < -f.r) f.x = innerWidth + f.r;
-      let g = vCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
-      g.addColorStop(0, `rgba(255, 255, 255, ${f.opacity})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      vCtx.fillStyle = g; vCtx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
-  });
+    fogParticles.forEach(f => {
+        f.x += f.vx; if (f.x > innerWidth + f.r) f.x = -f.r; if (f.x < -f.r) f.x = innerWidth + f.r;
+        let g = vCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+        g.addColorStop(0, `rgba(255, 255, 255, ${f.opacity})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        vCtx.fillStyle = g; vCtx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
+    });
 
-  if (comet) {
-      vCtx.beginPath(); 
-      // Градиент хвоста теперь зависит от вектора скорости vx/vy
-      let g = vCtx.createLinearGradient(comet.x, comet.y, comet.x - (comet.vx * 10), comet.y - (comet.vy * 10));
-      g.addColorStop(0, `rgba(255, 220, 150, ${comet.opacity})`); 
-      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      vCtx.strokeStyle = g; 
-      vCtx.lineWidth = 2; 
-      vCtx.moveTo(comet.x, comet.y);
-      vCtx.lineTo(comet.x - (comet.vx * (comet.len/15)), comet.y - (comet.vy * (comet.len/15))); 
-      vCtx.stroke();
-      
-      comet.x += comet.vx; 
-      comet.y += comet.vy; 
-      
-      // Удаляем, если вылетела далеко за пределы
-      if (comet.x > innerWidth + 500 || comet.x < -500 || comet.y > innerHeight + 500 || comet.y < -500) comet = null;
-  }
+    if (comet) {
+        vCtx.beginPath(); 
+        let g = vCtx.createLinearGradient(comet.x, comet.y, comet.x - (comet.vx * 10), comet.y - (comet.vy * 10));
+        g.addColorStop(0, `rgba(255, 220, 150, ${comet.opacity})`); 
+        g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        vCtx.strokeStyle = g; vCtx.lineWidth = 2; 
+        vCtx.moveTo(comet.x, comet.y);
+        vCtx.lineTo(comet.x - (comet.vx * (comet.len/15)), comet.y - (comet.vy * (comet.len/15))); 
+        vCtx.stroke();
+        comet.x += comet.vx; comet.y += comet.vy;
+        if (comet.x > innerWidth + 500 || comet.x < -500 || comet.y > innerHeight + 500 || comet.y < -500) comet = null;
+    }
 
-  if (supernova) {
-      vCtx.beginPath(); let g = vCtx.createRadialGradient(supernova.x, supernova.y, 0, supernova.x, supernova.y, supernova.r);
-      g.addColorStop(0, `rgba(255, 255, 255, ${supernova.opacity})`); g.addColorStop(0.2, `rgba(255, 200, 50, ${supernova.opacity*0.5})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      vCtx.fillStyle = g; vCtx.arc(supernova.x, supernova.y, supernova.r, 0, Math.PI*2); vCtx.fill();
-      if (supernova.stage === 'growing') { supernova.r += 0.5; supernova.opacity += 0.02; if (supernova.opacity >= 0.8) supernova.stage = 'fading'; }
-      else { supernova.r += 0.2; supernova.opacity -= 0.01; if (supernova.opacity <= 0) supernova = null; }
+    if (supernova) {
+        vCtx.beginPath(); let g = vCtx.createRadialGradient(supernova.x, supernova.y, 0, supernova.x, supernova.y, supernova.r);
+        g.addColorStop(0, `rgba(255, 255, 255, ${supernova.opacity})`); g.addColorStop(0.2, `rgba(255, 200, 50, ${supernova.opacity*0.5})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        vCtx.fillStyle = g; vCtx.arc(supernova.x, supernova.y, supernova.r, 0, Math.PI*2); vCtx.fill();
+        if (supernova.stage === 'growing') { supernova.r += 0.5; supernova.opacity += 0.02; if (supernova.opacity >= 0.8) supernova.stage = 'fading'; }
+        else { supernova.r += 0.2; supernova.opacity -= 0.01; if (supernova.opacity <= 0) supernova = null; }
+    }
   }
 
   audioElements.forEach(el => {
@@ -388,32 +364,40 @@ function animate(){
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
-        el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
-        el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
         
-        if(Math.random() < 0.08) {
-            steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
-        }
-        if(Math.random() < (0.05 + vol/255*0.4)) {
-            particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+        if (sleepMode) {
+          el.visBar.style.width = '0%';
+          el.btn.style.backgroundColor = 'rgba(255,255,255,0.2)';
+        } else {
+          el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
+          el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
+          
+          if(Math.random() < 0.08) {
+              steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
+          }
+          if(Math.random() < (0.05 + vol/255*0.4)) {
+              particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
+          }
         }
     } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
 
-  for (let i = steamParticles.length - 1; i >= 0; i--) {
-    const s = steamParticles[i]; s.y -= s.speed; s.x += Math.sin(s.y * 0.01) * s.drift; s.opacity -= 0.0005;
-    let grad = vCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
-    let c = s.color.split(',').slice(0,3).join(',');
-    grad.addColorStop(0, `${c}, ${s.opacity})`); grad.addColorStop(1, `${c}, 0)`);
-    vCtx.fillStyle = grad; vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); vCtx.fill();
-    if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
-  }
+  if (!sleepMode) {
+    for (let i = steamParticles.length - 1; i >= 0; i--) {
+      const s = steamParticles[i]; s.y -= s.speed; s.x += Math.sin(s.y * 0.01) * s.drift; s.opacity -= 0.0005;
+      let grad = vCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+      let c = s.color.split(',').slice(0,3).join(',');
+      grad.addColorStop(0, `${c}, ${s.opacity})`); grad.addColorStop(1, `${c}, 0)`);
+      vCtx.fillStyle = grad; vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); vCtx.fill();
+      if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
+    }
 
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.s; p.al -= 0.001;
-    vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`; vCtx.fill();
-    if(p.al <= 0) particles.splice(i, 1);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i]; p.y -= p.s; p.al -= 0.001;
+      vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      vCtx.fillStyle = `${p.c.split(',').slice(0,3).join(',')},${p.al})`; vCtx.fill();
+      if(p.al <= 0) particles.splice(i, 1);
+    }
   }
   animationId = requestAnimationFrame(animate);
 }
@@ -425,18 +409,14 @@ function toggleSleep() {
     const canvases = [document.getElementById('stars'), document.getElementById('vis')];
     
     if (sleepMode) {
-        cancelAnimationFrame(animationId);
         canvases.forEach(c => c.classList.add('hidden'));
         document.body.classList.remove('fancy-bg');
         document.body.style.background = '#000';
-        audioElements.forEach(el => {
-            el.visBar.style.width = '0%';
-            if(el.btn.classList.contains('active')) el.btn.style.backgroundColor = 'rgba(255,255,255,0.2)';
-        });
+        particles = [];
+        steamParticles = [];
     } else {
         canvases.forEach(c => c.classList.remove('hidden'));
         document.body.classList.add('fancy-bg');
-        animationId = requestAnimationFrame(animate);
     }
     updateUI();
 }
@@ -445,13 +425,8 @@ function runRandom() {
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  
-  let count = Math.random() < 0.25 
-    ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) 
-    : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
-  
+  let count = Math.random() < 0.25 ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-
   const hasAudible = toPlay.some(el => !el.isMuted);
   if (!hasAudible) {
     const audibleOptions = readySounds.filter(el => !el.isMuted);
@@ -460,7 +435,6 @@ function runRandom() {
       if (!toPlay.includes(randomAudible)) toPlay.push(randomAudible);
     }
   }
-
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
@@ -496,7 +470,6 @@ function updateUI(){
   document.getElementById('speedTrigger').innerText=t.speeds[currentSpeedKey];
   document.getElementById('sleepBtn').innerText = `${t.sleep}: ${sleepMode ? 'ON' : 'OFF'}`;
   document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
-  
   const speedBtns = document.querySelectorAll('#speedDropdown button');
   speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
