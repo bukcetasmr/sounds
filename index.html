@@ -192,15 +192,87 @@ let supernova = null;
 let fogParticles = Array.from({length: 5}, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 150+Math.random()*100, opacity: 0.03 + Math.random()*0.05, vx: Math.random()*0.2 - 0.1 }));
 
 const sounds = [
-  {file:'purplebrush.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
-  {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
-  {file:'carrot.mp3', name:{en:'Carrot', ru:'Морковь', uk:'Морква'}, color:'rgba(255,140,0,0.5)'},
-  {file:'oldphone.mp3', name:{en:'Old Phone', ru:'Телефон', uk:'Телефон'}, color:'rgba(50,50,50,0.5)'},
-  {file:'greybrush.mp3', name:{en:'Grey Brush', ru:'Серая кисть', uk:'Сірий пензель'}, color:'rgba(140,140,140,0.5)'},
-  {file:'pinksoftbrush.mp3', name:{en:'Soft Brush', ru:'Мягкая кисть', uk:'М’який пензель'}, color:'rgba(255,182,193,0.5)'},
-  {file:'strawberry.mp3', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
-  {file:'wax.mp3', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.5)'},
-  {file:'wood.mp3', name:{en:'Wood', ru:'Дерево', uk:'Дерево'}, color:'rgba(255,255,0,0.5)'}
+  {
+    "file": "purplebrush.mp3",
+    "name": {
+      "en": "Purple Brush",
+      "ru": "Фиолетовая кисть",
+      "uk": "Фіолетовий пензель"
+    },
+    "color": "rgba(150,100,255,0.5)"
+  },
+  {
+    "file": "greybrush.mp3",
+    "name": {
+      "en": "Grey Brush",
+      "ru": "Серая кисть",
+      "uk": "Сірий пензель"
+    },
+    "color": "rgba(140,140,140,0.5)"
+  },
+  {
+    "file": "pinksoftbrush.mp3",
+    "name": {
+      "en": "Soft Brush",
+      "ru": "Мягкая кисть",
+      "uk": "М’який пензель"
+    },
+    "color": "rgba(255,182,193,0.5)"
+  },
+  {
+    "file": "strawberry.mp3",
+    "name": {
+      "en": "Strawberry",
+      "ru": "Клубника",
+      "uk": "Полуниця"
+    },
+    "color": "rgba(255,105,180,0.5)"
+  },
+  {
+    "file": "wax.mp3",
+    "name": {
+      "en": "Wax",
+      "ru": "Воск",
+      "uk": "Віск"
+    },
+    "color": "rgba(255,165,0,0.5)"
+  },
+  {
+    "file": "carrot.mp3",
+    "name": {
+      "en": "Carrot",
+      "ru": "Морковь",
+      "uk": "Морква"
+    },
+    "color": "rgba(255,140,0,0.5)"
+  },
+  {
+    "file": "choko.mp3",
+    "name": {
+      "en": "Choco",
+      "ru": "Шоколад",
+      "uk": "Шоколад"
+    },
+    "color": "rgba(139,69,19,0.5)"
+  },
+  {
+    "file": "wood.mp3",
+    "name": {
+      "en": "Wood",
+      "ru": "Дерево",
+      "uk": "Дерево"
+    },
+    "color": "rgba(255,255,0,0.5)"
+  },
+  {
+    "file": "oldphone.mp3",
+    "name": {
+      "en": "Old Phone",
+      "ru": "Телефон",
+      "uk": "Телефон"
+    },
+    "color": "rgba(50,50,50,0.5)"
+  }
 ];
 
 const uiTL = {
