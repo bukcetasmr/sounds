@@ -380,37 +380,46 @@ function toggleSleep() {
     updateUI();
 }
 
-// Усовершенствованная система воспроизведения
+// ВОЗВРАЩЕННАЯ И УЛУЧШЕННАЯ ЛОГИКА
 function runRandom() { 
   if(!randomActive) return; 
   
-  // Очищаем старый таймер перед созданием нового, чтобы не было наслоений
   if (nextCycleTimeout) clearTimeout(nextCycleTimeout);
 
   let readySounds = audioElements.filter(el => el.isLoaded);
 
-  // Если звуки еще не готовы, проверяем каждую секунду (как ты и просил)
+  // Каждую секунду проверяем готовность, если еще ничего не скачано
   if (readySounds.length === 0) { 
     nextCycleTimeout = setTimeout(runRandom, 1000); 
     return; 
   }
 
-  // Если звуки есть, выбираем 1-2 случайных
-  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  // Логика как в старой версии: иногда много звуков, иногда мало
+  let count = Math.random() < 0.25 
+    ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) // 3-4 звука (хор)
+    : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); // 1-2 звука (соло)
+
   let toPlay = [...readySounds].sort(() => 0.5 - Math.random()).slice(0, count);
 
-  // Убеждаемся, что выбранный сет не пустой (защита от пауз)
-  if (toPlay.length > 0) {
-      audioElements.forEach(el => {
-          if (toPlay.includes(el)) {
-              if (el.targetVol === 0) fadeIn(el);
-          } else {
-              if (el.targetVol > 0) fadeOut(el);
-          }
-      });
+  // Проверка на мут: если все выбранные звуки замьючены, добавляем один слышимый (как в старой версии)
+  const hasAudible = toPlay.some(el => !el.isMuted);
+  if (!hasAudible) {
+    const audibleOptions = readySounds.filter(el => !el.isMuted);
+    if (audibleOptions.length > 0) {
+      const randomAudible = audibleOptions[Math.floor(Math.random() * audibleOptions.length)];
+      if (!toPlay.includes(randomAudible)) toPlay.push(randomAudible);
+    }
   }
 
-  // Планируем следующий цикл
+  // Включаем выбранные, выключаем остальные
+  audioElements.forEach(el => {
+      if (toPlay.includes(el)) {
+          if (el.targetVol === 0) fadeIn(el);
+      } else {
+          if (el.targetVol > 0) fadeOut(el);
+      }
+  });
+
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
