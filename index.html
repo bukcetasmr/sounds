@@ -81,15 +81,6 @@
     0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; }
   }
 
-  /* Таймер загрузки */
-  .load-timer {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 10px; color: #ffb400; font-weight: normal; opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .sound-button.loading .load-timer { opacity: 1; }
-  .sound-button.loading span { opacity: 0.15; }
-
   .mute-btn {
     position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
     background: rgba(255,255,255,0.1); border-radius: 50%; display: none;
@@ -213,61 +204,42 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" }, sec: "sec" },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" }, sec: "сек" },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" }, sec: "сек" }
+  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
+  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
 
 async function smartLoad(state) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
-    state.btn.style.setProperty('--load-percent', '10%');
-    const timerEl = state.btn.querySelector('.load-timer');
+    state.btn.style.setProperty('--load-percent', '15%');
     
     const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random().toString(36).substring(7)}`;
     
-    let startTime = Date.now();
-
     try {
         state.audio.src = url;
         state.audio.load();
 
+        // Отслеживаем прогресс загрузки для визуального фидбека
         state.audio.onprogress = () => {
-            if (state.audio.buffered.length > 0 && state.audio.duration) {
-                const bufferedEnd = state.audio.buffered.end(0);
-                const total = state.audio.duration;
-                const percent = (bufferedEnd / total) * 100;
-                
-                state.btn.style.setProperty('--load-percent', `${Math.max(10, percent)}%`);
-
-                // Прогнозируемое время загрузки
-                const now = Date.now();
-                const elapsed = (now - startTime) / 1000; 
-                if (elapsed > 0.5) { 
-                    const speed = bufferedEnd / elapsed; // частей в сек
-                    const remaining = (total - bufferedEnd) / speed;
-                    
-                    if (remaining > 0) {
-                        const secLabel = uiTL[langOrder[langIdx]].sec;
-                        timerEl.innerText = `${Math.ceil(remaining)}${secLabel}`;
-                    }
-                }
+            if (state.audio.buffered.length > 0) {
+                const percent = (state.audio.buffered.end(0) / state.audio.duration) * 100;
+                state.btn.style.setProperty('--load-percent', `${Math.max(15, percent)}%`);
             }
         };
 
         const success = await new Promise((resolve) => {
             state.audio.oncanplaythrough = () => {
                 state.btn.style.setProperty('--load-percent', '100%');
-                timerEl.innerText = 'OK';
                 setTimeout(() => {
                     state.btn.classList.remove('loading', 'broken');
                     state.btn.classList.add('ready');
                     state.isLoaded = true;
                     resolve(true);
-                }, 400);
+                }, 300);
             };
             state.audio.onerror = () => resolve(false);
-            setTimeout(() => resolve(false), 20000); 
+            setTimeout(() => resolve(false), 15000); // Тайм-аут чуть больше для iPhone
         });
 
         if (!success) handleLoadError(state);
@@ -298,12 +270,7 @@ const grid = document.getElementById('soundGrid');
 sounds.forEach((s) => {
   const btn = document.createElement('button');
   btn.className = 'sound-button';
-  btn.innerHTML = `
-    <div class="mute-btn">🔊</div>
-    <div class="load-timer">...</div>
-    <span>${s.name['en']}</span>
-    <div class="tile-vis"><div class="tile-vis-bar"></div></div>
-  `;
+  btn.innerHTML = `<div class="mute-btn">🔊</div><span>${s.name['en']}</span><div class="tile-vis"><div class="tile-vis-bar"></div></div>`;
   grid.appendChild(btn);
   
   const audio = new Audio();
@@ -447,7 +414,7 @@ function animate(){
     } else if(el.isLoaded) { 
         el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
         el.visBar.style.width = '0%'; 
-        // Если кнопка не активна, прогресс загрузки (через ::before) убирается визуально
+        el.btn.style.setProperty('--load-percent', '0%');
     }
   });
 
