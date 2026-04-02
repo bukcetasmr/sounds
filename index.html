@@ -168,15 +168,34 @@ let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, currentSpeedKey = 'fast', langIdx = 0, randomActive = false, nextCycleTimeout = null;
 let sleepMode = false, animationId = null;
 let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+let idleTimer = null; // Таймер бездействия
 
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
+// Сброс таймера бездействия при движении или касании
+function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(startSmartAutoLoad, 1000); // 1 секунда бездействия
+}
+
 window.addEventListener('mousemove', e => {
-    // Делитель 60 вместо 30 для уменьшения чувствительности
-    targetX = (e.clientX - innerWidth/2) / 60;
+    targetX = (e.clientX - innerWidth/2) / 60; // Чувствительность уменьшена в 2 раза
     targetY = (e.clientY - innerHeight/2) / 60;
+    resetIdleTimer();
 });
+window.addEventListener('touchstart', resetIdleTimer);
+
+// Система умной автозагрузки
+function startSmartAutoLoad() {
+    const nextToLoad = audioElements.find(el => !el.isLoaded && !el.btn.classList.contains('loading'));
+    if (nextToLoad) {
+        smartLoad(nextToLoad).then(() => {
+            // После успешной загрузки одного, планируем следующий через небольшую паузу
+            idleTimer = setTimeout(startSmartAutoLoad, 200);
+        });
+    }
+}
 
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
@@ -193,7 +212,7 @@ const sounds = [
 const uiTL = {
   en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
   ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, если звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
 
 const grid = document.getElementById('soundGrid');
@@ -232,14 +251,20 @@ async function smartLoad(state) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
     const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random()}`;
-    try {
-        state.audio.src = url; state.audio.load();
+    return new Promise((resolve) => {
+        state.audio.src = url;
+        state.audio.load();
         state.audio.oncanplaythrough = () => { 
             state.btn.classList.remove('loading', 'broken'); 
             state.isLoaded = true; 
+            resolve();
         };
-        state.audio.onerror = () => { state.btn.classList.add('broken'); state.btn.classList.remove('loading'); };
-    } catch (e) { state.btn.classList.add('broken'); }
+        state.audio.onerror = () => { 
+            state.btn.classList.add('broken'); 
+            state.btn.classList.remove('loading'); 
+            resolve();
+        };
+    });
 }
 
 function initAudioContext() {
@@ -408,7 +433,11 @@ document.getElementById('sleepBtn').onclick = toggleSleep;
 document.getElementById('repairBtn').onclick = () => location.reload();
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % 3; updateUI(); }; });
-document.getElementById('closeWelcome').onclick = () => { document.getElementById('welcomeModal').style.display='none'; initAudioContext(); audioElements.forEach(s => smartLoad(s)); };
+document.getElementById('closeWelcome').onclick = () => { 
+    document.getElementById('welcomeModal').style.display='none'; 
+    initAudioContext(); 
+    startSmartAutoLoad(); // Запуск системы автозагрузки при закрытии модалки
+};
 window.onclick = () => document.getElementById('speedDropdown').classList.remove('open');
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
 
