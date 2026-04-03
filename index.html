@@ -138,7 +138,7 @@
     <h1 id="title">BUCKET ASMR</h1>
     <div class="live-counter">
       <div class="live-dot"></div>
-      <span id="online-count">1</span> LIVE
+      <span id="online-count">—</span> LIVE
     </div>
     <div id="helpBtn" onclick="showHelp()">?</div>
     <button id="langBtn" class="lang-btn-ui lang-switcher-btn">EN</button>
@@ -185,14 +185,36 @@ const db = firebase.database();
 const connectionsRef = db.ref('online_users');
 const countElement = document.getElementById('online-count');
 
-const myConnectionRef = connectionsRef.push();
-myConnectionRef.onDisconnect().remove();
-myConnectionRef.set(true);
+// Переменные для управления сетью
+let myConnectionRef = null;
 
-connectionsRef.on('value', (snap) => {
-  const count = snap.numChildren();
-  countElement.innerText = count || 1;
-});
+// Функция управления онлайном (для экономии заряда)
+function toggleFirebaseNetwork(isActive) {
+    if (isActive) {
+        // Подключаемся
+        if (!myConnectionRef) {
+            myConnectionRef = connectionsRef.push();
+            myConnectionRef.onDisconnect().remove();
+            myConnectionRef.set(true);
+            
+            // Слушаем изменения только если не в режиме сна
+            connectionsRef.on('value', (snap) => {
+                countElement.innerText = snap.numChildren() || 1;
+            });
+        }
+    } else {
+        // Отключаемся полностью
+        if (myConnectionRef) {
+            connectionsRef.off('value'); // Перестаем слушать обновления
+            myConnectionRef.remove();    // Удаляем себя из списка
+            myConnectionRef = null;
+            countElement.innerText = "—";
+        }
+    }
+}
+
+// Запускаем сеть при старте (пока не в режиме сна)
+toggleFirebaseNetwork(true);
 
 // --- PASSWORD & HISTORY LOCK ---
 function checkPass() {
@@ -202,7 +224,6 @@ function checkPass() {
     document.getElementById('pass-screen').classList.add('hidden');
     document.getElementById('welcomeModal').style.display = 'flex';
     initAudioContext();
-    // Активируем ловушку истории сразу после входа
     window.history.pushState(null, null, window.location.href);
     window.onpopstate = function() {
         window.history.pushState(null, null, window.location.href);
@@ -244,7 +265,7 @@ const sounds = [
 
 const uiTL = {
   en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", sleep: "Sleep", tabFeatures: "Functions", tabGuide: "Guide", features: ["<span>✦</span> <b>Full Library:</b> All premium sounds unlocked.", "<span>✦</span> <b>Stay Awake:</b> Screen won't turn off automatically.", "<span>✦</span> <b>Mixer:</b> Play multiple sounds at the same time.", "<span>✦</span> <b>Randomizer:</b> Automatic sound switching.", "<span>✦</span> <b>Sleep Mode:</b> Zero light for deep relaxation."], guide: ["<b>1. Manual:</b> Click icons to start/stop specific sounds.", "<b>2. Multi:</b> Tap multiple icons to create your own mix.", "<b>3. Auto:</b> Press <b>PLAY</b> for random switching.", "<b>4. Speed:</b> Use the speed menu to change auto-play rhythm.", "<b>5. Mute:</b> Use the small icon on active tiles to silence tracks."], speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
-  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", sleep: "Dormir", tabFeatures: "Funções", tabGuide: "Guia", features: ["<span>✦</span> <b>Biblioteca Total:</b> Todos os sons premium desbloqueados.", "<span>✦</span> <b>Sempre Ativo:</b> A tela não apaga automaticamente.", "<span>✦</span> <b>Mixer:</b> Toque vários sons ao mesmo tempo.", "<span>✦</span> <b>Aleatório:</b> Troca automática de sons.", "<span>✦</span> <b>Modo Sono:</b> Luz zero para relaxamento profundo."], guide: ["<b>1. Manual:</b> Clique nos ícones para iniciar/parar sons.", "<b>2. Multi:</b> Toque em vários para criar seu mix.", "<b>3. Auto:</b> Pressione <b>Tocar</b> para troca aleatória.", "<b>4. Velocidade:</b> Mude o ritmo no menu de velocidade.", "<b>5. Mudo:</b> Use o ícone pequeno no som ativo para silenciar."], speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
+  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", sleep: "Dormir", tabFeatures: "Funções", tabGuide: "Guia", features: ["<span>✦</span> <b>Biblioteca Total:</b> Todos os sons premium desbloqueados.", "<span>✦</span> <b>Sempre Ativo:</b> A tela não apaga автоматически.", "<span>✦</span> <b>Mixer:</b> Toque vários sons ao mesmo tempo.", "<span>✦</span> <b>Aleatório:</b> Troca automática de sons.", "<span>✦</span> <b>Modo Sono:</b> Luz zero para relaxamento profundo."], guide: ["<b>1. Manual:</b> Clique nos ícones para iniciar/parar sons.", "<b>2. Multi:</b> Toque em vários para criar seu mix.", "<b>3. Auto:</b> Pressione <b>Tocar</b> para troca aleatória.", "<b>4. Velocidade:</b> Mude o ritmo no menu de velocidade.", "<b>5. Mudo:</b> Use o ícone pequeno no som ativo para silenciar."], speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", sleep: "Сон", tabFeatures: "Функції", tabGuide: "Інструкція", features: ["<span>✦</span> <b>Повна Бібліотека:</b> Всі преміум звуки розблоковано.", "<span>✦</span> <b>Без Сну:</b> Екран не згасає автоматично.", "<span>✦</span> <b>Міксер:</b> Грайте кілька звуків одночасно.", "<span>✦</span> <b>Рандомайзер:</b> Автоматичне перемикання звуків.", "<span>✦</span> <b>Нічний Режим:</b> Повна темрява для сну."], guide: ["<b>1. Ручний:</b> Натисніть на звук, щоб увімкнути або вимкнути.", "<b>2. Мікс:</b> Натискайте кілька звуків разом для шарування.", "<b>3. Авто:</b> Кнопка <b>ГРАТИ</b> для випадкового режиму.", "<b>4. Швидкість:</b> Змінюйте темп авто-режиму в меню.", "<b>5. ТИША:</b> Маленька іконка на плитці вимикає звук треку."], speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } },
   ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", sleep: "Сон", tabFeatures: "Функции", tabGuide: "Инструкция", features: ["<span>✦</span> <b>Полная библиотека:</b> Все премиум звуки открыты.", "<span>✦</span> <b>Бодрость:</b> Экран не гаснет во время сеанса.", "<span>✦</span> <b>Микшер:</b> Запуск нескольких звуков одновременно.", "<span>✦</span> <b>Рандомайзер:</b> Авто-переключение звуков для вас.", "<span>✦</span> <b>Режим Сна:</b> Минимум света для глубокого отдыха."], guide: ["<b>1. Ручной:</b> Нажми на иконку для старта или стопа звука.", "<b>2. Микс:</b> Выбирай несколько звуков для создания фона.", "<b>3. Авто:</b> Кнопка <b>ИГРАТЬ</b> включит случайный режим.", "<b>4. Скорость:</b> Настрой ритм переключения в меню.", "<b>5. Тишина:</b> Маленький значок на активной плитке убирает звук."], speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } }
 };
@@ -380,29 +401,37 @@ requestAnimationFrame(animate);
 
 function toggleSleep() {
     sleepMode = !sleepMode;
-    if (sleepMode) { document.getElementById('stars').classList.add('hidden'); document.getElementById('vis').classList.add('hidden'); document.body.classList.remove('fancy-bg'); document.body.style.background = '#000'; particles = []; } 
-    else { document.getElementById('stars').classList.remove('hidden'); document.getElementById('vis').classList.remove('hidden'); document.body.classList.add('fancy-bg'); }
+    if (sleepMode) { 
+        document.getElementById('stars').classList.add('hidden'); 
+        document.getElementById('vis').classList.add('hidden'); 
+        document.body.classList.remove('fancy-bg'); 
+        document.body.style.background = '#000'; 
+        particles = []; 
+        // ВАЖНО: Выключаем сеть
+        toggleFirebaseNetwork(false);
+    } else { 
+        document.getElementById('stars').classList.remove('hidden'); 
+        document.getElementById('vis').classList.remove('hidden'); 
+        document.body.classList.add('fancy-bg'); 
+        // ВАЖНО: Включаем сеть
+        toggleFirebaseNetwork(true);
+    }
     updateUI();
 }
 
-// --- ОБНОВЛЕННЫЙ РАНДОМАЙЗЕР (АНТИ-ТИШИНА) ---
+// --- ОБНОВЛЕННЫЙ РАНДОМАЙЗЕР ---
 function runRandom() { 
   if(!randomActive) return; 
   
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
 
-  // 1. Фильтруем те, у кого НЕ нажат MUTE
   let audibleSounds = readySounds.filter(el => !el.isMuted);
-  
-  // 2. Если все звуки замучены - используем все доступные, чтобы не было тишины
   let pool = audibleSounds.length > 0 ? audibleSounds : readySounds;
 
-  // 3. Выбираем количество звуков
   let count = Math.min(pool.length, Math.floor(Math.random() * 3) + 1);
   let toPlay = pool.sort(() => 0.5 - Math.random()).slice(0, count);
 
-  // 4. Применяем
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
 
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
