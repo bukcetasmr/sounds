@@ -188,17 +188,13 @@ const countElement = document.getElementById('online-count');
 let myConnectionRef = null;
 let counterInterval = null;
 
-// ФУНКЦИЯ ОБНОВЛЕНИЯ ЧИСЛА (разовая проверка)
 async function fetchOnlineCount() {
     try {
         const snapshot = await connectionsRef.once('value');
         countElement.innerText = snapshot.numChildren() || 1;
-    } catch (e) {
-        console.log("Firebase fetch error");
-    }
+    } catch (e) { console.log("Firebase fetch error"); }
 }
 
-// УПРАВЛЕНИЕ СЕТЬЮ (Оптимизировано под интервалы)
 function toggleFirebaseNetwork(isActive) {
     if (isActive) {
         if (!myConnectionRef) {
@@ -207,22 +203,13 @@ function toggleFirebaseNetwork(isActive) {
             myConnectionRef.set(true);
         }
         fetchOnlineCount();
-        if (!counterInterval) {
-            counterInterval = setInterval(fetchOnlineCount, 60000); 
-        }
+        if (!counterInterval) { counterInterval = setInterval(fetchOnlineCount, 60000); }
     } else {
-        if (counterInterval) {
-            clearInterval(counterInterval);
-            counterInterval = null;
-        }
-        if (myConnectionRef) {
-            myConnectionRef.remove();
-            myConnectionRef = null;
-        }
+        if (counterInterval) { clearInterval(counterInterval); counterInterval = null; }
+        if (myConnectionRef) { myConnectionRef.remove(); myConnectionRef = null; }
         countElement.innerText = "—";
     }
 }
-
 toggleFirebaseNetwork(true);
 
 // --- PASSWORD & HISTORY LOCK ---
@@ -234,15 +221,12 @@ function checkPass() {
     document.getElementById('welcomeModal').style.display = 'flex';
     initAudioContext();
     window.history.pushState(null, null, window.location.href);
-    window.onpopstate = function() {
-        window.history.pushState(null, null, window.location.href);
-    };
+    window.onpopstate = function() { window.history.pushState(null, null, window.location.href); };
   } else {
     error.style.display = 'block';
     document.getElementById('pass-input').value = '';
   }
 }
-
 document.getElementById('pass-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPass(); });
 
 function switchTab(event, tabId) {
@@ -255,9 +239,9 @@ function switchTab(event, tabId) {
 // --- AUDIO LOGIC ---
 let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout = null;
-let sleepMode = false, animationId = null, wakeLock = null;
+let sleepMode = false, wakeLock = null;
 
-// Плеер-якорь для фона iOS
+// Плеер-якорь для фона iOS (используем реальный шум для надежности на iOS 18)
 const bgKeeper = new Audio("https://raw.githubusercontent.com/anars/blank-audio/master/250-milliseconds-of-silence.mp3");
 bgKeeper.loop = true;
 
@@ -278,7 +262,7 @@ const sounds = [
 
 const uiTL = {
   en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", sleep: "Sleep", tabFeatures: "Functions", tabGuide: "Guide", features: ["<span>✦</span> <b>Full Library:</b> All premium sounds unlocked.", "<span>✦</span> <b>Stay Awake:</b> Screen won't turn off automatically.", "<span>✦</span> <b>Mixer:</b> Play multiple sounds at the same time.", "<span>✦</span> <b>Randomizer:</b> Automatic sound switching.", "<span>✦</span> <b>Sleep Mode:</b> Zero light for deep relaxation."], guide: ["<b>1. Manual:</b> Click icons to start/stop specific sounds.", "<b>2. Multi:</b> Tap multiple icons to create your own mix.", "<b>3. Auto:</b> Press <b>PLAY</b> for random switching.", "<b>4. Speed:</b> Use the speed menu to change auto-play rhythm.", "<b>5. Mute:</b> Use the small icon on active tiles to silence tracks."], speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
-  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", sleep: "Dormir", tabFeatures: "Funções", tabGuide: "Guia", features: ["<span>✦</span> <b>Biblioteca Total:</b> Todos os sons premium desbloqueados.", "<span>✦</span> <b>Sempre Ativo:</b> A tela não apaga автоматически.", "<span>✦</span> <b>Mixer:</b> Toque vários sons ao mesmo tempo.", "<span>✦</span> <b>Aleatório:</b> Troca automática de sons.", "<span>✦</span> <b>Modo Sono:</b> Luz zero para relaxamento profundo."], guide: ["<b>1. Manual:</b> Clique nos ícones para iniciar/parar sons.", "<b>2. Multi:</b> Тоque em vários para criar seu mix.", "<b>3. Auto:</b> Pressione <b>Tocar</b> para troca aleatória.", "<b>4. Velocidade:</b> Mude o ritmo no menu de velocidade.", "<b>5. Mudo:</b> Use o ícone pequeno no som ativo para silenciar."], speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
+  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", sleep: "Dormir", tabFeatures: "Funções", tabGuide: "Guia", features: ["<span>✦</span> <b>Biblioteca Total:</b> Todos os sons premium desbloqueados.", "<span>✦</span> <b>Sempre Ativo:</b> A tela não apaga автоматически.", "<span>✦</span> <b>Mixer:</b> Toque vários sons ao mesmo tempo.", "<span>✦</span> <b>Aleatório:</b> Troca automática de sons.", "<span>✦</span> <b>Modo Sono:</b> Luz zero para relaxamento profundo."], guide: ["<b>1. Manual:</b> Clique nos ícones para iniciar/parar sons.", "<b>2. Multi:</b> Toque em vários para criar seu mix.", "<b>3. Auto:</b> Pressione <b>Tocar</b> para troca aleatória.", "<b>4. Velocidade:</b> Mude o ritmo no menu de velocidade.", "<b>5. Mudo:</b> Use o ícone pequeno no som ativo para silenciar."], speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", sleep: "Сон", tabFeatures: "Функції", tabGuide: "Інструкція", features: ["<span>✦</span> <b>Повна Бібліотека:</b> Всі преміум звуки розблоковано.", "<span>✦</span> <b>Без Сну:</b> Екран не згасає автоматично.", "<span>✦</span> <b>Міксер:</b> Грайте кілька звуків одночасно.", "<span>✦</span> <b>Рандомайзер:</b> Автоматичне перемикання звуків.", "<span>✦</span> <b>Нічний Режим:</b> Повна темрява для сну."], guide: ["<b>1. Ручний:</b> Натисніть на звук, щоб увімкнути або вимкнути.", "<b>2. Мікс:</b> Натискайте кілька звуків разом для шарування.", "<b>3. Авто:</b> Кнопка <b>ГРАТИ</b> для випадкового режиму.", "<b>4. Швидкість:</b> Змінюйте темп авто-режиму в меню.", "<b>5. ТИША:</b> Маленька іконка на плитці вимикає звук треку."], speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } },
   ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", sleep: "Сон", tabFeatures: "Функции", tabGuide: "Инструкция", features: ["<span>✦</span> <b>Полная библиотека:</b> Все премиум звуки открыты.", "<span>✦</span> <b>Бодрость:</b> Экран не гаснет во время сеанса.", "<span>✦</span> <b>Микшер:</b> Запуск нескольких звуков одновременно.", "<span>✦</span> <b>Рандомайзер:</b> Авто-переключение звуков для вас.", "<span>✦</span> <b>Режим Сна:</b> Минимум света для глубокого отдыха."], guide: ["<b>1. Ручной:</b> Нажми на иконку для старта или стопа звука.", "<b>2. Микс:</b> Выбирай несколько звуков для создания фона.", "<b>3. Авто:</b> Кнопка <b>ИГРАТЬ</b> включит случайный режим.", "<b>4. Скорость:</b> Настрой ритм переключения в меню.", "<b>5. Тишина:</b> Маленький значок на активной плитке убирает звук."], speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } }
 };
@@ -317,18 +301,15 @@ function initAudioContext() {
   globalAnalyser.connect(audioCtx.destination);
   requestWakeLock();
   
-  // Media Session для iPhone 14/11
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: 'BUCKET ASMR Premium',
       artist: 'Independent Developer',
-      album: 'Relaxation Sessions',
+      album: 'Deep Sleep Mixer',
       artwork: [{ src: 'https://img.icons8.com/fluency/240/null/bucket.png', sizes: '240x240', type: 'image/png' }]
     });
   }
 }
-
-function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
 
 const grid = document.getElementById('soundGrid');
 sounds.forEach((s) => {
@@ -344,7 +325,7 @@ sounds.forEach((s) => {
     state.isMuted = !state.isMuted;
     state.muteBtn.classList.toggle('muted', state.isMuted);
     state.muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
-    if (state.gainNode) state.gainNode.gain.setTargetAtTime(state.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.2);
+    state.audio.volume = state.isMuted ? 0 : 0.6;
   };
   btn.onclick = () => { 
     initAudioContext(); 
@@ -355,28 +336,38 @@ sounds.forEach((s) => {
 });
 
 function fadeIn(el) {
+  el.audio.volume = 0;
   el.audio.play().then(() => {
     if (!el.source && audioCtx) {
       el.source = audioCtx.createMediaElementSource(el.audio);
-      el.gainNode = audioCtx.createGain();
       el.analyser = audioCtx.createAnalyser();
-      el.source.connect(el.gainNode);
-      el.gainNode.connect(el.analyser);
-      el.analyser.connect(globalAnalyser);
+      // КРИТИЧЕСКИЙ ФИКС: Соединяем напрямую с выходом для фона
+      el.source.connect(el.analyser);
+      el.analyser.connect(audioCtx.destination);
       el.tileDataArray = new Uint8Array(el.analyser.frequencyBinCount);
     }
     el.btn.classList.add('active');
     el.targetVol = 0.6;
-    if (el.gainNode) el.gainNode.gain.setTargetAtTime(el.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.4);
-    bgKeeper.play().catch(() => {}); // Подстраховка якорем
+    
+    // Плавный фейд громкости без GainNode
+    let v = 0;
+    const interval = setInterval(() => {
+        if (v < 0.6 && !el.isMuted) { v += 0.05; el.audio.volume = Math.min(v, 0.6); }
+        else { clearInterval(interval); }
+    }, 50);
+
+    if (bgKeeper.paused) bgKeeper.play().catch(() => {});
   }).catch(() => {});
 }
 
 function fadeOut(el) {
   el.btn.classList.remove('active');
   el.targetVol = 0;
-  if(el.gainNode) el.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.8);
-  setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
+  let v = el.audio.volume;
+  const interval = setInterval(() => {
+      if (v > 0.05) { v -= 0.05; el.audio.volume = v; }
+      else { el.audio.volume = 0; el.audio.pause(); clearInterval(interval); }
+  }, 50);
 }
 
 // --- VISUALS ---
@@ -446,8 +437,8 @@ function runRandom() {
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let audibleSounds = readySounds.filter(el => !el.isMuted);
-  let pool = audibleSounds.length > 0 ? audibleSounds : readySounds;
+  let pool = readySounds.filter(el => !el.isMuted);
+  if (pool.length === 0) pool = readySounds;
   let count = Math.min(pool.length, Math.floor(Math.random() * 3) + 1);
   let toPlay = pool.sort(() => 0.5 - Math.random()).slice(0, count);
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
@@ -470,8 +461,8 @@ document.getElementById('repairBtn').onclick = () => location.reload();
 document.getElementById('closeWelcome').onclick = () => { 
   initAudioContext(); 
   document.getElementById('welcomeModal').style.display='none'; 
-  audioElements.forEach(state => smartLoad(state)); 
-  bgKeeper.play().catch(() => {}); // Стартуем якорь при начале сессии
+  audioElements.forEach(state => smartLoad(state));
+  bgKeeper.play().catch(() => {});
 };
 
 function updateUI(){
@@ -493,6 +484,7 @@ function updateUI(){
   speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
   audioElements.forEach((el, i) => el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]);
 }
+function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
 window.onclick = () => document.getElementById('speedDropdown').classList.remove('open');
 updateUI();
 </script>
