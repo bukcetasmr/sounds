@@ -174,7 +174,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
-// --- КОНФИГУРАЦИЯ ---
+// --- CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyAhDzJnUnVFQRlojHZaWp00IgrPsfbmkKo",
   authDomain: "bucket-asmr-premium.firebaseapp.com",
@@ -261,7 +261,7 @@ const uiTL = {
         "<b>2. Mixagem:</b> Combine sons para efeito 3D.", 
         "<b>3. Auto:</b> Use <b>TOCAR</b> para modo aleatório.", 
         "<b>4. Tempo:</b> Mude a velocidade no menu.",
-        "<b>5. Dormir:</b> Use para tela preta e economia."
+        "<b>5. Dormir:</b> Use para tela preта и economia."
     ], 
     speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } 
   },
@@ -343,7 +343,7 @@ sounds.forEach((s, idx) => {
   audio.crossOrigin = "anonymous";
   audio.setAttribute('playsinline', '');
   
-  const state = { audio, btn, active: false, muted: false, fileName: s.file, color: s.color, loaded: false };
+  const state = { audio, btn, active: false, muted: false, fileName: s.file, color: s.color, loaded: false, fadeInterval: null };
 
   btn.onclick = () => {
     if (!state.loaded) {
@@ -358,33 +358,32 @@ sounds.forEach((s, idx) => {
   btn.querySelector('.mute-btn').onclick = (e) => {
     e.stopPropagation();
     state.muted = !state.muted;
-    
-    // Мгновенная реакция: если замутили, убираем громкость в 0
     if (state.muted) {
         state.audio.volume = 0;
     } else if (state.active) {
         state.audio.volume = 0.6;
     }
-    
     btn.querySelector('.mute-btn').classList.toggle('muted', state.muted);
   };
   audioElements.push(state);
 });
 
 function fadeIn(el) {
+  if(el.fadeInterval) clearInterval(el.fadeInterval);
   el.active = true; el.btn.classList.add('active'); el.btn.style.backgroundColor = el.color + "44";
   el.audio.volume = 0; el.audio.play().catch(()=>{});
-  let v = 0; const interval = setInterval(() => {
+  let v = 0; el.fadeInterval = setInterval(() => {
     if (v < 0.6 && !el.muted) { v += 0.05; el.audio.volume = Math.min(v, 0.6); } 
-    else { clearInterval(interval); }
+    else { clearInterval(el.fadeInterval); el.fadeInterval = null; }
   }, 50);
 }
 
 function fadeOut(el) {
+  if(el.fadeInterval) clearInterval(el.fadeInterval);
   el.active = false; el.btn.classList.remove('active'); el.btn.style.backgroundColor = "";
-  let v = el.audio.volume; const interval = setInterval(() => {
+  let v = el.audio.volume; el.fadeInterval = setInterval(() => {
     if (v > 0.05) { v -= 0.05; el.audio.volume = v; } 
-    else { el.audio.volume = 0; el.audio.pause(); clearInterval(interval); }
+    else { el.audio.volume = 0; el.audio.pause(); clearInterval(el.fadeInterval); el.fadeInterval = null; }
   }, 50);
 }
 
@@ -412,17 +411,29 @@ function updateUI() {
 
 document.getElementById('randomBtn').onclick = () => {
   randomActive = !randomActive;
-  if (randomActive) { runRandom(); } 
-  else { clearTimeout(nextCycleTimeout); audioElements.forEach(el => { if(el.active) fadeOut(el); }); }
+  if (randomActive) { 
+    runRandom(); 
+  } else { 
+    // При нажатии ПАУЗА:
+    clearTimeout(nextCycleTimeout); 
+    audioElements.forEach(el => {
+        // 1. Сбрасываем флаги активности
+        el.active = false; 
+        el.btn.classList.remove('active'); 
+        el.btn.style.backgroundColor = "";
+        // 2. Очищаем все интервалы затухания
+        if(el.fadeInterval) clearInterval(el.fadeInterval); 
+        // 3. ПРИНУДИТЕЛЬНО СТОПАЕМ ЗВУК (чтобы не зависал в фоне iOS)
+        el.audio.pause();
+        el.audio.volume = 0;
+    });
+  }
   updateUI();
 };
 
 function runRandom() {
   if (!randomActive) return;
-
-  // Исключаем звуки, которые замучены (muted) или не загружены
   const pool = audioElements.filter(el => el.loaded && !el.muted);
-
   if (pool.length === 0) { 
     const unloaded = audioElements.filter(el => !el.loaded);
     if (unloaded.length > 0) {
@@ -430,20 +441,14 @@ function runRandom() {
         nextCycleTimeout = setTimeout(runRandom, 2000);
         return;
     }
-    // Если все загружены, но все в Mute — просто ждем
     nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000);
     return;
   }
-
   const count = Math.floor(Math.random() * 2) + 1;
   const toPlay = pool.sort(() => 0.5 - Math.random()).slice(0, count);
-
   audioElements.forEach(el => {
-    if (toPlay.includes(el)) { 
-        if(!el.active) fadeIn(el); 
-    } else { 
-        if(el.active) fadeOut(el); 
-    }
+    if (toPlay.includes(el)) { if(!el.active) fadeIn(el); } 
+    else { if(el.active) fadeOut(el); }
   });
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000);
 }
@@ -457,9 +462,7 @@ function setSpeed(v, label) {
 
 document.getElementById('speedTrigger').onclick = () => document.getElementById('speedDropdown').classList.toggle('open');
 document.getElementById('repairBtn').onclick = () => location.reload();
-document.getElementById('closeWelcome').onclick = () => { 
-    document.getElementById('welcomeModal').style.display = 'none';
-};
+document.getElementById('closeWelcome').onclick = () => { document.getElementById('welcomeModal').style.display = 'none'; };
 
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % 4; updateUI(); };
@@ -470,9 +473,7 @@ document.getElementById('sleepBtn').onclick = () => {
     document.body.style.background = sleepMode ? "#000" : "";
     document.getElementById('stars').style.opacity = sleepMode ? "0" : "1";
     document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
-    
     document.getElementById('soundGrid').classList.toggle('hidden', sleepMode);
-    
     if (sleepMode) {
       if(presenceRef) presenceRef.remove();
       presenceRef = null;
@@ -498,9 +499,7 @@ function draw() {
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
       ctx.fillStyle = `rgba(255,255,255,${Math.abs(s.a)})`; ctx.fill();
     });
-  } else {
-    ctx.clearRect(0,0,innerWidth,innerHeight);
-  }
+  } else { ctx.clearRect(0,0,innerWidth,innerHeight); }
   requestAnimationFrame(draw);
 }
 draw();
